@@ -3,17 +3,17 @@
 #include "../util.h"
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
-#define NETWORK_BUF_SIZE 64
 #define NETWORK_NAME_SIZE 32
 #define NETWORK_IPV4_SIZE 16
+#define NETWORK_BUF_SIZE (NETWORK_NAME_SIZE + NETWORK_IPV4_SIZE + 8)
 
-static const char *network_get_name_cmd = "iwctl station wlan0 show | grep 'Connected network' | sed 's/Connected network//' | sed -r 's/\\s+//g'";
-static const char *network_get_ipv4_cmd = "iwctl station wlan0 show | grep 'IPv4 address' | sed 's/IPv4 address//' | sed -r 's/\\s+//g'";
+static const char *network_get_info_cmd = "ip route get 8.8.8.8";
 
 bool widget_network_init(struct S_Widget *w)
 {
-	if(!(w->text = malloc(NETWORK_BUF_SIZE)))
+	if (!(w->text = malloc(NETWORK_BUF_SIZE)))
 	{
 		w->active = false;
 		return false;
@@ -27,25 +27,86 @@ bool widget_network_init(struct S_Widget *w)
 
 bool widget_network_update(struct S_Widget *w)
 {
-	char network[NETWORK_BUF_SIZE];
-	char ipv4[NETWORK_IPV4_SIZE];
+	char info[NETWORK_BUF_SIZE];
 
-	exec_cmd(network_get_name_cmd, network, NETWORK_NAME_SIZE);
-	network[strnlen(network, NETWORK_NAME_SIZE) - 1] = '\0';
-
-	if(!strlen(network))
+	if (exec_cmd(network_get_info_cmd, info, NETWORK_BUF_SIZE) != 0)
 	{
 		strcpy(w->text, "disconnected");
 		w->should_redraw = true;
 		return true;
 	}
-	
-	exec_cmd(network_get_ipv4_cmd, ipv4, NETWORK_IPV4_SIZE);
-	ipv4[strnlen(ipv4, NETWORK_IPV4_SIZE) - 1] = '\0';
 
-	strcpy(w->text, network);
-	strcat(w->text, " - ");
-	strcat(w->text, ipv4);
+	char *interfaceloc = strstr(info, "dev ");
+	if (!interfaceloc)
+	{
+		strcpy(w->text, "disconnected");
+		w->should_redraw = true;
+		return true;
+	}
+
+	interfaceloc += 4;
+
+	char ip[NETWORK_IPV4_SIZE] = {0};
+
+	{
+		char *iploc = strstr(info, "src ");
+		if (iploc)
+		{
+			iploc += 4;
+			for (size_t i = 0; i < NETWORK_IPV4_SIZE; ++i)
+			{
+				if (iploc[i] == ' ')
+				{
+					ip[i] = '\0';
+					break;
+				}
+
+				ip[i] = iploc[i];
+			}
+		}
+		else
+		{
+			strncpy(ip, "???", NETWORK_IPV4_SIZE);
+		}
+	}
+
+	/* Wireless interfaces start with a 'w'. */
+	const bool wired = (interfaceloc[0] != 'w');
+
+	if (wired)
+	{
+		w->icon = " ";
+		strncpy(w->text, ip, NETWORK_BUF_SIZE);
+	}
+	else
+	{
+		w->icon = " ";
+
+		char interface[NETWORK_NAME_SIZE] = {0};
+		for (size_t i = 0; i < NETWORK_NAME_SIZE; ++i)
+		{
+			if (interfaceloc[i] == ' ')
+			{
+				interface[i] = '\0';
+				break;
+			}
+
+			interface[i] = interfaceloc[i];
+		}
+
+		char network_name_cmd[128] = {0};
+		snprintf(
+			network_name_cmd,
+			128,
+			"iwctl station %s show | grep 'Connected network' | sed 's/Connected network//' | sed -r 's/\\s+//g'",
+			interface);
+
+		char name[NETWORK_NAME_SIZE];
+		if (exec_cmd(network_name_cmd, name, NETWORK_NAME_SIZE) != 0)
+			strncpy(name, "???", NETWORK_NAME_SIZE);
+
+		snprintf(w->text, NETWORK_BUF_SIZE, "%s (%s)", name, ip);
+	}
 
 	w->should_redraw = true;
 
@@ -54,6 +115,6 @@ bool widget_network_update(struct S_Widget *w)
 
 void widget_network_destroy(struct S_Widget *w)
 {
-	if(w->text)
+	if (w->text)
 		free(w->text);
 }
