@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <errno.h>
 
 #include "util.h"
 
@@ -17,45 +18,46 @@ ecalloc(size_t nmemb, size_t size)
 	return p;
 }
 
-void
-die(const char *fmt, ...) {
+void die(const char *fmt, ...)
+{
 	va_list ap;
 
 	va_start(ap, fmt);
 	vfprintf(stderr, fmt, ap);
 	va_end(ap);
 
-	if (fmt[0] && fmt[strlen(fmt)-1] == ':') {
+	if (fmt[0] && fmt[strlen(fmt) - 1] == ':')
+	{
 		fputc(' ', stderr);
 		perror(NULL);
-	} else {
+	}
+	else
+	{
 		fputc('\n', stderr);
 	}
 
 	exit(1);
 }
 
-bool exec_cmd(const char *cmd, char *buf, size_t n)
+int exec_cmd(const char *cmd, char *buf, size_t n)
 {
 	FILE *fp = popen(cmd, "r");
-	if(!fp)
-		return false;
-	
-	if(buf)
+	if (!fp)
+		return errno;
+
+	if (buf)
 	{
 		fgets(buf, n, fp);
 		size_t buflen = strlen(buf);
-		for(size_t i = 0; i < buflen; ++i)
+		for (size_t i = 0; i < buflen; ++i)
 		{
-			if(iscntrl(buf[i]))
+			if (iscntrl(buf[i]))
 			{
 				buf[i] = '\0';
 				break;
 			}
 		}
 	}
-		
-	pclose(fp);
 
-	return true;
+	return pclose(fp);
 }
