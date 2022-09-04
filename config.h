@@ -15,10 +15,11 @@ static const char col_gray3[] = "#bbbbbb";
 static const char col_gray4[] = "#eeeeee";
 static const char col_cyan[] = "#005577";
 static const char col_purple[] = "#5F0A87";
+static const char col_red[] = "#FF0000";
 static const char *colors[][3] = {
 	/*               fg         bg          border   */
 	[SchemeNorm] = {col_gray3, col_black, col_black},
-	[SchemeSel] = {col_gray4, col_purple, col_black},
+	[SchemeSel] = {col_red, col_black, col_black},
 	//[SchemeSelWindow] = { col_gray4, "#000000", col_purple },
 	[SchemeWidget] = {col_gray3, col_black, col_black},
 };
@@ -103,7 +104,7 @@ static const Layout layouts[] = {
 
 /* commands */
 static char dmenumon[2] = "0"; /* component of dmenucmd, manipulated in spawn() */
-static const char *dmenucmd[] = {"dmenu_run", "-m", dmenumon, "-fn", dmenufont, "-nb", col_black, "-nf", col_gray3, "-sb", col_purple, "-sf", col_gray4, NULL};
+static const char *dmenucmd[] = {"dmenu_run", "-m", dmenumon, "-fn", dmenufont, "-nb", col_black, "-nf", col_gray3, "-sb", col_red, "-sf", col_gray4, NULL};
 static const char *termcmd[] = {"alacritty", NULL};
 
 static const void *speakers_plus[] = {"+", &widgets[WIDGET_SPEAKERS], NULL};
