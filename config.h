@@ -71,7 +71,7 @@ static Widget widgets[] = {
 		.update_interval = {.tv_sec = 5, .tv_usec = 0}},
 	[WIDGET_BACKLIGHT] = {.name = "Backlight", .icon = "", .init = widget_backlight_init, .update = NULL, .destroy = widget_backlight_destroy, .periodic_update = false},
 	[WIDGET_NETWORK] = {.name = "Network", .init = widget_network_init, .update = widget_network_update, .destroy = widget_network_destroy, .periodic_update = true, .update_interval = {.tv_sec = 5, .tv_usec = 0}},
-	[WIDGET_TIME] = {.name = "Time", .icon = " ", .init = widget_time_init, .update = widget_time_update, .destroy = widget_time_destroy, .periodic_update = true, .update_interval = {.tv_sec = 1, .tv_usec = 0}},
+	[WIDGET_TIME] = {.name = "Time", .icon = NULL, .init = widget_time_init, .update = widget_time_update, .destroy = widget_time_destroy, .periodic_update = true, .update_interval = {.tv_sec = 1, .tv_usec = 0}},
 	[WIDGET_MICROPHONE] = {.name = "Microphone", .icon = "", .init = widget_microphone_init, .update = NULL, .destroy = widget_microphone_destroy, .periodic_update = false},
 	[WIDGET_SPEAKERS] = {.name = "Speakers", .icon = " ", .init = widget_speakers_init, .update = NULL, .destroy = widget_speakers_destroy, .periodic_update = false}};
 

@@ -3,8 +3,19 @@
 #include <time.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
-#define TIMEBUF_SIZE 9
+#define TIMEBUF_SIZE 32
+
+static char* g_weekday_kanjis[] = {
+	"日",
+	"月",
+	"火",
+	"水",
+	"木",
+	"金",
+	"土"
+};
 
 bool widget_time_init(struct S_Widget *w)
 {
@@ -30,7 +41,18 @@ bool widget_time_update(struct S_Widget *w)
 	time(&rawtime);
 	timeinfo = localtime(&rawtime);
 
-	strftime(timebuf, TIMEBUF_SIZE, "%02H:%02M:%02S", timeinfo);
+	static char clockbuf[9];
+	strftime(clockbuf, TIMEBUF_SIZE, "%02H:%02M:%02S", timeinfo);
+
+	snprintf(
+		timebuf,
+		TIMEBUF_SIZE,
+		"%d月%d日(%s) %s",
+		timeinfo->tm_mon + 1,
+		timeinfo->tm_mday,
+		g_weekday_kanjis[timeinfo->tm_wday],
+		clockbuf
+	);
 
 	strcpy(w->text , timebuf);
 	w->should_redraw = true;
