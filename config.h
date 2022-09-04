@@ -36,6 +36,15 @@ static const Rule rules[] = {
 	{"Firefox", NULL, NULL, 1 << 8, 0, -1},
 };
 
+static const char *runners[] = {
+	/* Wallpaper */
+	"feh --bg-scale /home/oda/.local/share/wallpapers/panic1.png",
+	/* Tap to click */
+	"xinput set-prop \"ELAN469D:00 04F3:304B Touchpad\" $(xinput list-props \"ELAN469D:00 04F3:304B Touchpad\" | grep \"libinput Tapping Enabled (\" | cut -d ')' -f 1 - | cut -d '(' -f 2 -) 1",
+	/* Window compositor */
+	"picom -b -e 0  --backend glx --glx-no-stencil --glx-no-rebind-pixmap -f -I 0.05 -O 0.08 --opacity-rule \"90:class_g = 'Alacritty'\" --opacity-rule \"75:class_g = 'dwm'\""
+};
+
 #include "widgets/time.h"
 #include "widgets/speakers.h"
 #include "widgets/microphone.h"

@@ -1689,6 +1689,12 @@ void setmfact(const Arg *arg)
 	arrange(selmon);
 }
 
+void execute_runners()
+{
+	for (size_t i = 0; i < LENGTH(runners); ++i)
+		exec_cmd(runners[i], NULL, 0);
+}
+
 void setup(void)
 {
 	int i;
@@ -1762,6 +1768,8 @@ void setup(void)
 	XSelectInput(dpy, root, wa.event_mask);
 	grabkeys();
 	focus(NULL);
+
+	execute_runners();
 }
 
 void seturgent(Client *c, int urg)
