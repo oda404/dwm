@@ -12,7 +12,6 @@ typedef void(*widget_destroy)(struct S_Widget *w);
 
 typedef struct S_Widget
 {
-	char *name; // The name of the widget; Not really used
 	char *icon; // Generally an UTF-8 symbol.
 	char *text; // The text to be displayed next to the icon, if present.
 
