@@ -766,6 +766,53 @@ dirtomon(int dir)
 	return m;
 }
 
+int widgets_draw(Monitor *m)
+{
+	int tw = 0;
+	drw_setscheme(drw, scheme[SchemeWidget]);
+
+	for (size_t i = 0; i < LENGTH(widgets); ++i)
+	{
+		Widget *widget = &widgets[i];
+		if (!widget->active)
+			continue;
+
+		size_t totalsize = 2;
+		if (widget->icon)
+			totalsize += strlen(widget->icon) + 1;
+
+		size_t textlen = strlen(widget->text);
+		if (textlen)
+			totalsize += textlen + 1;
+		else
+			totalsize += 4;
+
+		char *tmp = malloc(totalsize);
+		if (!tmp)
+			continue;
+
+		strcpy(tmp, "| ");
+		if (widget->icon)
+		{
+			strcat(tmp, widget->icon);
+			strcat(tmp, " ");
+		}
+
+		if (textlen)
+			strcat(tmp, widget->text);
+		else
+			strcat(tmp, "---");
+
+		size_t tmp_tw = TEXTW(tmp);
+		tw += tmp_tw;
+
+		drw_text(drw, m->ww - tw, 0, tmp_tw, bh, 12, tmp, 0);
+		free(tmp);
+	}
+
+	return tw;
+}
+
 void drawbar(Monitor *m)
 {
 	int x, w, tw = 0;
@@ -779,43 +826,7 @@ void drawbar(Monitor *m)
 
 	/* draw status first so it can be overdrawn by tags later */
 	if (m == selmon)
-	{ /* status is only drawn on selected monitor */
-		drw_setscheme(drw, scheme[SchemeWidget]);
-		for (size_t i = 0; i < LENGTH(widgets); ++i)
-		{
-			Widget *widget = &widgets[i];
-			if (!widget->active)
-				continue;
-
-			size_t totalsize = 2;
-			if (widget->icon)
-				totalsize += strlen(widget->icon) + 1;
-
-			if (widget->text)
-				totalsize += strlen(widget->text) + 1;
-			else
-				totalsize += 4;
-
-			char *tmp = malloc(totalsize);
-			strcpy(tmp, "| ");
-			if (widget->icon)
-			{
-				strcat(tmp, widget->icon);
-				strcat(tmp, " ");
-			}
-
-			if (widget->text)
-				strcat(tmp, widget->text);
-			else
-				strcat(tmp, "---");
-
-			size_t tmp_tw = TEXTW(tmp);
-			tw += tmp_tw;
-
-			drw_text(drw, m->ww - tw, 0, tmp_tw, bh, 12, tmp, 0);
-			free(tmp);
-		}
-	}
+		tw = widgets_draw(m); /* status is only drawn on selected monitor */
 
 	for (c = m->clients; c; c = c->next)
 	{
@@ -1496,6 +1507,34 @@ void restack(Monitor *m)
 		;
 }
 
+static bool widgets_update(const struct timeval *curtime)
+{
+	for (size_t i = 0; i < LENGTH(widgets); ++i)
+	{
+		Widget *widget = &widgets[i];
+
+		/* If the widget is to be updated periodically, try to update it. */
+		if (widget->periodic_update)
+		{
+			const double now_ms = curtime->tv_sec * 1000 + curtime->tv_usec / 1000.0;
+
+			const double widget_ms = widget->last_update.tv_sec * 1000 + widget->last_update.tv_usec / 1000.0;
+			const double widget_update_ms = widget->update_interval.tv_sec * 1000 + widget->update_interval.tv_usec / 1000.0;
+
+			if (now_ms >= widget_ms + widget_update_ms)
+			{
+				widget->last_update = *curtime;
+				widget->update(widget);
+			}
+		}
+
+		if (widget->_should_redraw)
+		{
+			widget->_should_redraw = false;
+		}
+	}
+}
+
 void run(void)
 {
 	XEvent ev;
@@ -1507,32 +1546,9 @@ void run(void)
 	{
 		gettimeofday(&timestart, NULL);
 
-		for (size_t i = 0; i < LENGTH(widgets); ++i)
-		{
-			Widget *widget = &widgets[i];
-
-			/* If the widget is to be updated periodically, try to update it. */
-			if (widget->periodic_update)
-			{
-				const double now_ms = timestart.tv_sec * 1000 + timestart.tv_usec / 1000.0;
-
-				const double widget_ms = widget->last_update.tv_sec * 1000 + widget->last_update.tv_usec / 1000.0;
-				const double widget_update_ms = widget->update_interval.tv_sec * 1000 + widget->update_interval.tv_usec / 1000.0;
-
-				if (now_ms >= widget_ms + widget_update_ms)
-				{
-					widget->last_update = timestart;
-					widget->update(widget);
-				}
-			}
-
-			if (widget->should_redraw)
-			{
-				widget->should_redraw = false;
-			}
-		}
-
-		drawbar(selmon);
+		bool redraw = widgets_update(&timestart);
+		if (redraw)
+			drawbar(selmon);
 
 		while (XPending(dpy))
 		{
