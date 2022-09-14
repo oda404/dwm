@@ -541,6 +541,13 @@ void cleanup(void)
 	XSync(dpy, False);
 	XSetInputFocus(dpy, PointerRoot, RevertToPointerRoot, CurrentTime);
 	XDeleteProperty(dpy, root, netatom[NetActiveWindow]);
+
+	for (size_t i = 0; i < LENGTH(widgets); ++i)
+	{
+		Widget *w = &widgets[i];
+		if (w->destroy)
+			w->destroy(w);
+	}
 }
 
 void cleanupmon(Monitor *mon)
