@@ -33,6 +33,8 @@ CPPFLAGS = -D_DEFAULT_SOURCE -D_BSD_SOURCE -D_POSIX_C_SOURCE=200809L -DVERSION=\
 CFLAGS   = -std=c2x -pedantic -Wall -Wno-deprecated-declarations -O3 -march=${MARCH} ${INCS} ${CPPFLAGS}
 LDFLAGS  = ${LIBS}
 
+BUILDDIR = build
+
 # Solaris
 #CFLAGS = -fast ${INCS} -DVERSION=\"${VERSION}\"
 #LDFLAGS = ${LIBS}

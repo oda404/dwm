@@ -3,8 +3,9 @@
 
 include config.mk
 
+BUILDDIR ?= .
 SRC = drw.c dwm.c util.c widgets/backlight.c widgets/battery.c widgets/microphone.c widgets/network.c widgets/speakers.c widgets/time.c
-OBJ = ${SRC:.c=.o}
+OBJ = ${SRC:%.c=$(BUILDDIR)/%.c.o}
 
 all: options dwm
 
@@ -14,7 +15,8 @@ options:
 	@echo "LDFLAGS  = ${LDFLAGS}"
 	@echo "CC       = ${CC}"
 
-.c.o:
+$(BUILDDIR)/%.c.o: %.c
+	@mkdir -p $(dir $@)
 	${CC} -c ${CFLAGS} $< -o $@
 
 ${OBJ}: config.h config.mk
