@@ -1547,7 +1547,7 @@ void run(void)
 		gettimeofday(&timestart, NULL);
 
 		bool redraw = widgets_update(&timestart);
-		if (redraw)
+		if (redraw || scroll_window_name)
 			drawbar(selmon);
 
 		while (XPending(dpy))
