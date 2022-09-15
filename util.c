@@ -61,3 +61,13 @@ int exec_cmd(const char *cmd, char *buf, size_t n)
 
 	return pclose(fp);
 }
+
+double timeval_to_ms(const struct timeval *tv)
+{
+	return tv->tv_sec * 1000 + tv->tv_usec / 1000.0;
+}
+
+double timeval_to_sec(const struct timeval *tv)
+{
+	return tv->tv_sec + tv->tv_usec / 1000000.0;
+}
