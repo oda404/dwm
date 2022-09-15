@@ -1,7 +1,7 @@
 /* See LICENSE file for copyright and license details. */
 
 /* appearance */
-static const unsigned int borderpx = 0; /* border pixel of windows */
+static const unsigned int borderpx = 4; /* border pixel of windows */
 static const unsigned int snap = 32;	/* snap pixel */
 static const int showbar = 1;			/* 0 means no bar */
 static const int topbar = 1;			/* 0 means bottom bar */
@@ -44,8 +44,7 @@ static const char *runners[] = {
 	/* Tap to click */
 	"xinput set-prop \"ELAN469D:00 04F3:304B Touchpad\" $(xinput list-props \"ELAN469D:00 04F3:304B Touchpad\" | grep \"libinput Tapping Enabled (\" | cut -d ')' -f 1 - | cut -d '(' -f 2 -) 1",
 	/* Window compositor */
-	"picom -b -e 0  --backend glx --glx-no-stencil --glx-no-rebind-pixmap -f -I 0.05 -O 0.08 --opacity-rule \"90:class_g = 'Alacritty'\" --opacity-rule \"75:class_g = 'dwm'\""
-};
+	"picom -b -e 0  --backend glx --glx-no-stencil --glx-no-rebind-pixmap -f -I 0.05 -O 0.08 --opacity-rule \"90:class_g = 'Alacritty'\" --opacity-rule \"75:class_g = 'dwm'\""};
 
 #include "widgets/time.h"
 #include "widgets/speakers.h"
@@ -55,12 +54,12 @@ static const char *runners[] = {
 #include "widgets/backlight.h"
 #include "widget.h"
 
-#define WIDGET_BATTERY 0
-#define WIDGET_TIME 3
-#define WIDGET_MICROPHONE 4
-#define WIDGET_SPEAKERS 5
+#define WIDGET_BATTERY 1
+#define WIDGET_TIME 0
+#define WIDGET_MICROPHONE 3
+#define WIDGET_SPEAKERS 4
 #define WIDGET_NETWORK 2
-#define WIDGET_BACKLIGHT 1
+#define WIDGET_BACKLIGHT 5
 
 static Widget widgets[] = {
 	[WIDGET_BATTERY] = {
@@ -73,7 +72,7 @@ static Widget widgets[] = {
 	[WIDGET_NETWORK] = {.init = widget_network_init, .update = widget_network_update, .destroy = widget_network_destroy, .periodic_update = true, .update_interval = {.tv_sec = 5, .tv_usec = 0}},
 	[WIDGET_TIME] = {.icon = NULL, .init = widget_time_init, .update = widget_time_update, .destroy = widget_time_destroy, .periodic_update = true, .update_interval = {.tv_sec = 1, .tv_usec = 0}},
 	[WIDGET_MICROPHONE] = {.icon = "", .init = widget_microphone_init, .update = NULL, .destroy = widget_microphone_destroy, .periodic_update = false},
-	[WIDGET_SPEAKERS] = { .icon = " ", .init = widget_speakers_init, .update = NULL, .destroy = widget_speakers_destroy, .periodic_update = false}};
+	[WIDGET_SPEAKERS] = {.icon = " ", .init = widget_speakers_init, .update = NULL, .destroy = widget_speakers_destroy, .periodic_update = false}};
 
 /* layout(s) */
 static const float mfact = 0.55;	 /* factor of master area size [0.05..0.95] */
