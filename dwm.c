@@ -777,6 +777,8 @@ int widgets_draw(Monitor *m)
 		if (!widget->active)
 			continue;
 
+		widget_lock(widget);
+
 		size_t totalsize = 2;
 		if (widget->icon)
 			totalsize += strlen(widget->icon) + 1;
@@ -789,7 +791,10 @@ int widgets_draw(Monitor *m)
 
 		char *tmp = malloc(totalsize);
 		if (!tmp)
+		{
+			widget_unlock(widget);
 			continue;
+		}
 
 		strcpy(tmp, "| ");
 		if (widget->icon)
@@ -802,6 +807,8 @@ int widgets_draw(Monitor *m)
 			strcat(tmp, widget->text);
 		else
 			strcat(tmp, "---");
+
+		widget_unlock(widget);
 
 		size_t tmp_tw = TEXTW(tmp);
 		tw += tmp_tw;
@@ -1507,46 +1514,35 @@ void restack(Monitor *m)
 		;
 }
 
-static bool widgets_update(const struct timeval *curtime)
+static bool widgets_update_periodic(const struct timeval *now)
 {
+	bool shouldredraw = false;
+
 	for (size_t i = 0; i < LENGTH(widgets); ++i)
 	{
 		Widget *widget = &widgets[i];
+		if (!widget->periodic_update)
+			continue;
 
-		/* If the widget is to be updated periodically, try to update it. */
-		if (widget->periodic_update)
-		{
-			const double now_ms = curtime->tv_sec * 1000 + curtime->tv_usec / 1000.0;
-
-			const double widget_ms = widget->last_update.tv_sec * 1000 + widget->last_update.tv_usec / 1000.0;
-			const double widget_update_ms = widget->update_interval.tv_sec * 1000 + widget->update_interval.tv_usec / 1000.0;
-
-			if (now_ms >= widget_ms + widget_update_ms)
-			{
-				widget->last_update = *curtime;
-				widget->update(widget);
-			}
-		}
-
-		if (widget->_should_redraw)
-		{
-			widget->_should_redraw = false;
-		}
+		if (widget_update(now, widget))
+			shouldredraw = true;
 	}
+
+	return shouldredraw;
 }
 
 void run(void)
 {
 	XEvent ev;
-	struct timeval timestart, timestop;
+	struct timeval tvstart, tvend;
 	const float update_interval_sec = 1 / 60.f;
 	/* main event loop */
 	XSync(dpy, False);
 	while (running)
 	{
-		gettimeofday(&timestart, NULL);
+		gettimeofday(&tvstart, NULL);
 
-		bool redraw = widgets_update(&timestart);
+		bool redraw = widgets_update_periodic(&tvstart);
 		if (redraw || scroll_window_name)
 			drawbar(selmon);
 
@@ -1557,11 +1553,11 @@ void run(void)
 				handler[ev.type](&ev); /* call handler */
 		}
 
-		gettimeofday(&timestop, NULL);
+		gettimeofday(&tvend, NULL);
 
-		const float starttime = (timestart.tv_sec + timestart.tv_usec / 1000000.f);
-		const float endtime = (timestop.tv_sec + timestop.tv_usec / 1000000.f);
-		const float frametime = endtime - starttime;
+		const double startsec = timeval_to_sec(&tvstart);
+		const double endsec = timeval_to_sec(&tvend);
+		const double frametime = endsec - startsec;
 		if (frametime < update_interval_sec)
 			usleep((update_interval_sec - frametime) * 1000000);
 	}
@@ -1763,11 +1759,7 @@ void setup(void)
 		scheme[i] = drw_scm_create(drw, colors[i], 3);
 
 	for (i = 0; i < LENGTH(widgets); ++i)
-	{
-		Widget *widget = &widgets[i];
-		if (widget->init)
-			widget->init(widget);
-	}
+		widget_init(&widgets[i]);
 
 	/* init bars */
 	updatebars();
