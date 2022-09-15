@@ -6,7 +6,7 @@
 #include "../arg.h"
 #include <stddef.h>
 
-bool widget_microphone_init(struct S_Widget *w);
+int widget_microphone_init(struct S_Widget *w);
 void widget_microphone_destroy(struct S_Widget *w);
 void widget_microphone_event(const Arg *arg);
 

@@ -7,32 +7,25 @@ static const char *g_mic_volume_get_cmd = "awk -F\"[][]\" '/Left:/ { print $2 }'
 static const char *g_mic_volume_raise_cmd = "awk -F\"[][]\" '/Left:/ { print $2 }' <(amixer sset Capture 5%+)";
 static const char *g_mic_volume_lower_cmd = "awk -F\"[][]\" '/Left:/ { print $2 }' <(amixer sset Capture 5%-)";
 
-#define MICROPHONE_VOLUME_SIZE 5
-
 #define WIDGET_ABORT       \
 	{                      \
 		w->active = false; \
-		return false;      \
+		return 1;          \
 	}
 
-bool widget_microphone_init(struct S_Widget *w)
+int widget_microphone_init(struct S_Widget *w)
 {
-	if (!(w->text = malloc(MICROPHONE_VOLUME_SIZE)))
-		WIDGET_ABORT;
-
-	if (exec_cmd(g_mic_volume_get_cmd, w->text, MICROPHONE_VOLUME_SIZE) != 0)
+	if (exec_cmd(g_mic_volume_get_cmd, w->text, WIDGET_TEXT_MAXLEN) != 0)
 		WIDGET_ABORT;
 
 	w->active = true;
-	w->should_redraw = true;
+	w->_dirty = true;
 
-	return true;
+	return 0;
 }
 
 void widget_microphone_destroy(struct S_Widget *w)
 {
-	if (w->text)
-		free(w->text);
 }
 
 void widget_microphone_event(const Arg *arg)
@@ -64,11 +57,11 @@ void widget_microphone_event(const Arg *arg)
 		return;
 	}
 
-	if (exec_cmd(amixer_call, w->text, MICROPHONE_VOLUME_SIZE) != 0)
+	if (exec_cmd(amixer_call, w->text, WIDGET_TEXT_MAXLEN) != 0)
 	{
 		w->active = false;
 		return;
 	}
 
-	w->should_redraw = true;
+	w->_dirty = true;
 }

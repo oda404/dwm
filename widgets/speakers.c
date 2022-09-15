@@ -21,25 +21,20 @@ static const char *g_speakers_volume_lower_cmd =
 		return false;      \
 	}
 
-bool widget_speakers_init(struct S_Widget *w)
+int widget_speakers_init(struct S_Widget *w)
 {
-	if (!(w->text = malloc(SPEAKERS_VOLUME_SIZE)))
-		WIDGET_ABORT;
-
 	/* Try to execute the volume_get_cmd to see if it's valid. If not abort. */
 	if (exec_cmd(g_speakers_volume_get_cmd, w->text, SPEAKERS_VOLUME_SIZE) != 0)
 		WIDGET_ABORT;
 
 	w->active = true;
-	w->should_redraw = true;
+	w->_dirty = true;
 
 	return true;
 }
 
 void widget_speakers_destroy(struct S_Widget *w)
 {
-	if (w->text)
-		free(w->text);
 }
 
 void widget_speakers_event(const Arg *arg)
@@ -77,5 +72,5 @@ void widget_speakers_event(const Arg *arg)
 	if (tries == 0)
 		w->active = false;
 
-	w->should_redraw = true;
+	w->_dirty = true;
 }

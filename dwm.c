@@ -808,6 +808,8 @@ int widgets_draw(Monitor *m)
 		else
 			strcat(tmp, "---");
 
+		/* Clean :) */
+		widget->_dirty = false;
 		widget_unlock(widget);
 
 		size_t tmp_tw = TEXTW(tmp);

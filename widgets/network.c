@@ -11,14 +11,8 @@
 
 static const char *network_get_info_cmd = "ip route get 8.8.8.8";
 
-bool widget_network_init(struct S_Widget *w)
+int widget_network_init(struct S_Widget *w)
 {
-	if (!(w->text = malloc(NETWORK_BUF_SIZE)))
-	{
-		w->active = false;
-		return false;
-	}
-
 	w->active = true;
 	widget_network_update(w);
 
@@ -32,7 +26,6 @@ bool widget_network_update(struct S_Widget *w)
 	if (exec_cmd(network_get_info_cmd, info, NETWORK_BUF_SIZE) != 0)
 	{
 		strcpy(w->text, "disconnected");
-		w->should_redraw = true;
 		return true;
 	}
 
@@ -40,7 +33,6 @@ bool widget_network_update(struct S_Widget *w)
 	if (!interfaceloc)
 	{
 		strcpy(w->text, "disconnected");
-		w->should_redraw = true;
 		return true;
 	}
 
@@ -108,13 +100,9 @@ bool widget_network_update(struct S_Widget *w)
 		snprintf(w->text, NETWORK_BUF_SIZE, "%s (%s)", name, ip);
 	}
 
-	w->should_redraw = true;
-
 	return true;
 }
 
 void widget_network_destroy(struct S_Widget *w)
 {
-	if (w->text)
-		free(w->text);
 }

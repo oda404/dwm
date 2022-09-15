@@ -5,7 +5,7 @@
 #include "../widget.h"
 #include <stddef.h>
 
-bool widget_time_init(struct S_Widget *w);
+int widget_time_init(struct S_Widget *w);
 bool widget_time_update(struct S_Widget *w);
 void widget_time_destroy(struct S_Widget *w);
 

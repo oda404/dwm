@@ -14,14 +14,11 @@ static const char *g_backlight_lower = "xbacklight -dec 5";
 #define WIDGET_ABORT       \
 	{                      \
 		w->active = false; \
-		return false;      \
+		return 1;          \
 	}
 
-bool widget_backlight_init(struct S_Widget *w)
+int widget_backlight_init(struct S_Widget *w)
 {
-	if (!(w->text = malloc(5)))
-		WIDGET_ABORT;
-
 	/* Try to execute the volume_get_cmd to see if it's valid. If not abort. */
 	if (exec_cmd(g_backlight_get, w->text, 4) != 0)
 		WIDGET_ABORT;
@@ -31,9 +28,9 @@ bool widget_backlight_init(struct S_Widget *w)
 	w->text[buflen + 1] = '\0';
 
 	w->active = true;
-	w->should_redraw = true;
+	w->_dirty = true;
 
-	return true;
+	return 0;
 }
 
 void widget_backlight_event(const Arg *arg)
@@ -80,11 +77,9 @@ void widget_backlight_event(const Arg *arg)
 	w->text[buflen] = '%';
 	w->text[buflen + 1] = '\0';
 
-	w->should_redraw = true;
+	w->_dirty = true;
 }
 
 void widget_backlight_destroy(struct S_Widget *w)
 {
-	if (w->text)
-		free(w->text);
 }
