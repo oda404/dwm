@@ -41,6 +41,9 @@ MARCH = znver1
 CPPFLAGS = -D_DEFAULT_SOURCE -D_BSD_SOURCE -D_POSIX_C_SOURCE=200809L -DVERSION=\"${VERSION}\" \
 ${XINERAMAFLAGS} ${AUDICON_FLAGS} ${PULSE_FLAGS}
 
+CFLAGS   = -std=c2x -pedantic -Wall -Werror=implicit-function-declaration \
+-Wno-deprecated-declarations -O3 -march=${MARCH} ${INCS} ${CPPFLAGS}
+
 LDFLAGS  = ${LIBS}
 
 BUILDDIR = build
