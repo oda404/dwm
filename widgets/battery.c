@@ -114,24 +114,16 @@ bool widget_battery_update(struct S_Widget *w)
     snprintf(w->text, WIDGET_TEXT_MAXLEN, "%s%s", capacity, battery_status_to_icon(status));
 
     unsigned int battery_perc = atoi(w->text);
-    switch (battery_perc)
-    {
-    case 0 ... 10:
+    if (battery_perc <= 10)
         w->icon = " ";
-        break;
-    case 11 ... 25:
+    else if (battery_perc <= 25)
         w->icon = " ";
-        break;
-    case 26 ... 50:
+    else if (battery_perc <= 50)
         w->icon = " ";
-        break;
-    case 51 ... 75:
+    else if (battery_perc <= 75)
         w->icon = " ";
-        break;
-    default:
+    else
         w->icon = " ";
-        break;
-    }
 
     w->_dirty = true;
 
