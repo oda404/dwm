@@ -1,40 +1,30 @@
 
 #include "speakers.h"
-#include "../util.h"
-#include <stdlib.h>
-#include <unistd.h>
+#include "../audiocon.h"
+#include <stdio.h>
 
-static const char *g_speakers_volume_get_cmd =
-	"awk -F\"[][]\" '/Left:/ { print $2 }' <(amixer sget Master)";
+static void on_volume_change(u32 volume, void *userdata)
+{
+	Widget *w = (Widget *)userdata;
 
-static const char *g_speakers_volume_raise_cmd =
-	"awk -F\"[][]\" '/Left:/ { print $2 }' <(amixer sset Master 5%+)";
-
-static const char *g_speakers_volume_lower_cmd =
-	"awk -F\"[][]\" '/Left:/ { print $2 }' <(amixer sset Master 5%-)";
-
-#define SPEAKERS_VOLUME_SIZE 5
-
-#define WIDGET_ABORT       \
-	{                      \
-		w->active = false; \
-		return false;      \
-	}
+	mtx_lock(&w->_lock);
+	snprintf(w->text, WIDGET_TEXT_MAXLEN, "%u%%", volume);
+	w->_dirty = true;
+	mtx_unlock(&w->_lock);
+}
 
 int widget_speakers_init(struct S_Widget *w)
 {
-	/* Try to execute the volume_get_cmd to see if it's valid. If not abort. */
-	if (exec_cmd(g_speakers_volume_get_cmd, w->text, SPEAKERS_VOLUME_SIZE) != 0)
-		WIDGET_ABORT;
+	w->_should_lock_on_access = true;
+	if (mtx_init(&w->_lock, mtx_plain | mtx_recursive) == thrd_error)
+		return 1;
+
+	if (audiocon_on_output_volume_change(on_volume_change, w) != 0)
+		return 1;
 
 	w->active = true;
-	w->_dirty = true;
 
-	return true;
-}
-
-void widget_speakers_destroy(struct S_Widget *w)
-{
+	return 0;
 }
 
 void widget_speakers_event(const Arg *arg)
@@ -48,29 +38,26 @@ void widget_speakers_event(const Arg *arg)
 	if (!cmd || !w)
 		return;
 
-	const char *amixer_call = NULL;
-
 	switch (*cmd)
 	{
 	case '+':
-		amixer_call = g_speakers_volume_raise_cmd;
+		audiocon_inc_output_volume(5);
 		break;
+
 	case '-':
-		amixer_call = g_speakers_volume_lower_cmd;
+		audiocon_dec_output_volume(5);
 		break;
+
 	case 'm':
-		amixer_call = "";
-		return;
+		// TODO: mute
+		break;
+
 	default:
-		return;
+		break;
 	}
+}
 
-	int tries = 10;
-	while (exec_cmd(amixer_call, w->text, SPEAKERS_VOLUME_SIZE) != 0 && (tries-- > 0))
-		usleep(10000);
-
-	if (tries == 0)
-		w->active = false;
-
-	w->_dirty = true;
+void widget_speakers_destroy(struct S_Widget *w)
+{
+	mtx_destroy(&w->_lock);
 }
