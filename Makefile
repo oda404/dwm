@@ -4,7 +4,12 @@
 include config.mk
 
 BUILDDIR ?= .
-SRC = drw.c dwm.c util.c widget.c widgets/backlight.c widgets/battery.c widgets/microphone.c widgets/network.c widgets/speakers.c widgets/time.c
+
+SRC = \
+drw.c dwm.c util.c widget.c widgets/backlight.c widgets/battery.c \
+widgets/microphone.c widgets/network.c widgets/speakers.c widgets/time.c \
+${AUDIOCON_SRC} ${PULSE_SRC}
+
 OBJ = ${SRC:%.c=$(BUILDDIR)/%.c.o}
 
 all: options dwm

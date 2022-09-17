@@ -41,6 +41,10 @@
 #endif /* XINERAMA */
 #include <X11/Xft/Xft.h>
 
+#ifdef USE_AUDIOCON
+#include "audiocon.h"
+#endif
+
 #include "drw.h"
 #include "util.h"
 #include "arg.h"
@@ -548,6 +552,10 @@ void cleanup(void)
 		if (w->destroy)
 			w->destroy(w);
 	}
+
+#ifdef USE_AUDIOCON
+	audiocon_destroy();
+#endif
 }
 
 void cleanupmon(Monitor *mon)
@@ -1759,6 +1767,10 @@ void setup(void)
 	scheme = ecalloc(LENGTH(colors), sizeof(Clr *));
 	for (i = 0; i < LENGTH(colors); i++)
 		scheme[i] = drw_scm_create(drw, colors[i], 3);
+
+#ifdef USE_AUDIOCON
+	audiocon_init();
+#endif
 
 	for (i = 0; i < LENGTH(widgets); ++i)
 		widget_init(&widgets[i]);
