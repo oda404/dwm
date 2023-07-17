@@ -1,6 +1,7 @@
 
 #include "backlight.h"
-#include "../util.h"
+#include <dwm/util.h>
+#include <dwm/colors.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <stdio.h>
@@ -29,6 +30,7 @@ int widget_backlight_init(struct S_Widget *w)
 
 	w->active = true;
 	w->_dirty = true;
+	w->bgcolor = col_purple6;
 
 	return 0;
 }

@@ -1,6 +1,6 @@
 
 #include "pulse.h"
-#include "../util.h"
+#include <dwm/util.h>
 #include <string.h>
 #include <threads.h>
 #include <pulse/pulseaudio.h>

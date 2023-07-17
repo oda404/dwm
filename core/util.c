@@ -6,7 +6,7 @@
 #include <ctype.h>
 #include <errno.h>
 
-#include "util.h"
+#include <dwm/util.h>
 
 void *
 ecalloc(size_t nmemb, size_t size)
@@ -64,10 +64,10 @@ int exec_cmd(const char *cmd, char *buf, size_t n)
 
 double timeval_to_ms(const struct timeval *tv)
 {
-	return tv->tv_sec * 1000 + tv->tv_usec / 1000.0;
+	return (double)tv->tv_sec * 1000.0 + (double)tv->tv_usec / 1000.0;
 }
 
 double timeval_to_sec(const struct timeval *tv)
 {
-	return tv->tv_sec + tv->tv_usec / 1000000.0;
+	return (double)tv->tv_sec + (double)tv->tv_usec / 1000000.0;
 }

@@ -2,7 +2,7 @@
 #ifndef DWM_TIME_WIDGET_H
 #define DWM_TIME_WIDGET_H
 
-#include "../widget.h"
+#include <dwm/widget.h>
 #include <stddef.h>
 
 int widget_time_init(struct S_Widget *w);

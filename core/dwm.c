@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <math.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <X11/cursorfont.h>
@@ -41,14 +42,19 @@
 #endif /* XINERAMA */
 #include <X11/Xft/Xft.h>
 
-#ifdef USE_AUDIOCON
-#include "audiocon.h"
+#ifndef VERSION
+#define VERSION "unknown"
 #endif
 
-#include "drw.h"
-#include "util.h"
-#include "arg.h"
-#include "widget.h"
+#include <dwm/drw.h>
+#include <dwm/util.h>
+#include <dwm/arg.h>
+#include <dwm/widget.h>
+#include <dwm/layout.h>
+#include <dwm/monitor.h>
+#ifdef USE_AUDIOCON
+#include <dwm/audiocon.h>
+#endif
 
 /* macros */
 #define BUTTONMASK (ButtonPressMask | ButtonReleaseMask)
@@ -74,7 +80,8 @@ enum
 {
 	SchemeNorm,
 	SchemeSel,
-	SchemeWidget
+	SchemeTagNormal,
+	SchemeTagCircle,
 }; /* color schemes */
 enum
 {
@@ -117,24 +124,6 @@ typedef struct
 	const Arg arg;
 } Button;
 
-typedef struct Monitor Monitor;
-typedef struct Client Client;
-struct Client
-{
-	char name[256];
-	float mina, maxa;
-	int x, y, w, h;
-	int oldx, oldy, oldw, oldh;
-	int basew, baseh, incw, inch, maxw, maxh, minw, minh, hintsvalid;
-	int bw, oldbw;
-	unsigned int tags;
-	int isfixed, isfloating, isurgent, neverfocus, oldstate, isfullscreen;
-	Client *next;
-	Client *snext;
-	Monitor *mon;
-	Window win;
-};
-
 typedef struct
 {
 	unsigned int mod;
@@ -142,35 +131,6 @@ typedef struct
 	void (*func)(const Arg *);
 	const Arg arg;
 } Key;
-
-typedef struct
-{
-	const char *symbol;
-	void (*arrange)(Monitor *);
-} Layout;
-
-struct Monitor
-{
-	char ltsymbol[16];
-	float mfact;
-	int nmaster;
-	int num;
-	int by;				/* bar geometry */
-	int mx, my, mw, mh; /* screen size */
-	int wx, wy, ww, wh; /* window area  */
-	unsigned int seltags;
-	unsigned int sellt;
-	unsigned int tagset[2];
-	int showbar;
-	int topbar;
-	Client *clients;
-	Client *sel;
-	Client *stack;
-	Monitor *next;
-	Window barwin;
-	const Layout *lt[2];
-	float name_scroll;
-};
 
 typedef struct
 {
@@ -202,10 +162,9 @@ static void destroynotify(XEvent *e);
 static void detach(Client *c);
 static void detachstack(Client *c);
 static Monitor *dirtomon(int dir);
-static void drawbar(Monitor *m);
-static void drawbars(void);
+static void drawbar(Monitor *m, float deltatime);
+static void drawbars(float deltatime);
 static void enternotify(XEvent *e);
-static void expose(XEvent *e);
 static void focus(Client *c);
 static void focusin(XEvent *e);
 static void focusmon(const Arg *arg);
@@ -264,7 +223,6 @@ static void updateclientlist(void);
 static int updategeom(void);
 static void updatenumlockmask(void);
 static void updatesizehints(Client *c);
-static void updatestatus(void);
 static void updatetitle(Client *c);
 static void updatewindowtype(Client *c);
 static void updatewmhints(Client *c);
@@ -292,7 +250,6 @@ static void (*handler[LASTEvent])(XEvent *) = {
 	[ConfigureNotify] = configurenotify,
 	[DestroyNotify] = destroynotify,
 	[EnterNotify] = enternotify,
-	[Expose] = expose,
 	[FocusIn] = focusin,
 	[KeyPress] = keypress,
 	[MappingNotify] = mappingnotify,
@@ -310,7 +267,7 @@ static Monitor *mons, *selmon;
 static Window root, wmcheckwin;
 
 /* configuration, allows nested code to access above variables */
-#include "config.h"
+#include "../config.h"
 
 /* compile-time check if all tags fit into an unsigned int bit array. */
 struct NumTags
@@ -553,6 +510,8 @@ void cleanup(void)
 			w->destroy(w);
 	}
 
+	clrs_free_all();
+
 #ifdef USE_AUDIOCON
 	audiocon_destroy();
 #endif
@@ -777,127 +736,207 @@ dirtomon(int dir)
 int widgets_draw(Monitor *m)
 {
 	int tw = 0;
-	drw_setscheme(drw, scheme[SchemeWidget]);
+#define TEXTBUF_MAX 32
+	char textbuf[TEXTBUF_MAX] = {0};
 
 	for (size_t i = 0; i < LENGTH(widgets); ++i)
 	{
-		Widget *widget = &widgets[i];
-		if (!widget->active)
+		Widget *w = &widgets[i];
+		if (!w->active)
 			continue;
 
-		widget_lock(widget);
+		widget_lock(w);
 
-		size_t totalsize = 2;
-		if (widget->icon)
-			totalsize += strlen(widget->icon) + 1;
+		size_t textlen = strlen(w->text ? w->text : "");
+		snprintf(textbuf, TEXTBUF_MAX, "%s%s%s", w->icon ? w->icon : "", w->icon ? " " : "", textlen ? w->text : "---");
+		tw += TEXTW(textbuf);
+	}
 
-		size_t textlen = strlen(widget->text);
-		if (textlen)
-			totalsize += textlen + 1;
-		else
-			totalsize += 4;
-
-		char *tmp = malloc(totalsize);
-		if (!tmp)
-		{
-			widget_unlock(widget);
+	// draw in reverse order so we get a cool overlap effect
+	int ttw = tw;
+	for (ssize_t i = LENGTH(widgets) - 1; i >= 0; --i)
+	{
+		Widget *w = &widgets[i];
+		if (!w->active)
 			continue;
-		}
 
-		strcpy(tmp, "| ");
-		if (widget->icon)
-		{
-			strcat(tmp, widget->icon);
-			strcat(tmp, " ");
-		}
-
-		if (textlen)
-			strcat(tmp, widget->text);
-		else
-			strcat(tmp, "---");
+		size_t textlen = strlen(w->text ? w->text : "");
+		snprintf(textbuf, TEXTBUF_MAX, "%s%s%s", w->icon ? w->icon : "", w->icon ? " " : "", textlen ? w->text : "---");
 
 		/* Clean :) */
-		widget->_dirty = false;
-		widget_unlock(widget);
+		w->_dirty = false;
+		widget_unlock(w);
 
-		size_t tmp_tw = TEXTW(tmp);
-		tw += tmp_tw;
+		size_t tmp_tw = TEXTW(textbuf);
 
-		drw_text(drw, m->ww - tw, 0, tmp_tw, bh, 12, tmp, 0);
-		free(tmp);
+		Clr *sch = clrs_get_scheme(
+			drw,
+			w->fgcolor ? w->fgcolor : colors[SchemeTagNormal][0],
+			w->bgcolor ? w->bgcolor : colors[SchemeTagNormal][1]);
+
+		drw_setscheme(drw, sch);
+		drw_text(drw, m->ww - ttw, BAR_Y_PADDING, tmp_tw + 32, TEXTW(tags[0]), 12, textbuf, 0);
+		ttw -= tmp_tw;
 	}
 
 	return tw;
 }
 
-void drawbar(Monitor *m)
+static int drawbar_tags(Monitor *m)
 {
-	int x, w, tw = 0;
-	int boxs = drw->fonts->h / 9;
-	int boxw = drw->fonts->h / 6 + 2;
 	unsigned int i, occ = 0, urg = 0;
-	Client *c;
-
-	if (!m->showbar)
-		return;
-
-	/* draw status first so it can be overdrawn by tags later */
-	if (m == selmon)
-		tw = widgets_draw(m); /* status is only drawn on selected monitor */
-
-	for (c = m->clients; c; c = c->next)
+	for (Client *c = m->clients; c; c = c->next)
 	{
 		occ |= c->tags;
 		if (c->isurgent)
 			urg |= c->tags;
 	}
-	x = 0;
+
+	int x = BAR_X_PADDING;
+	size_t w = 0;
+
+	size_t tags_width = 0;
+	for (i = 0; i < LENGTH(tags); ++i)
+		tags_width += TEXTW(tags[i]) + BAR_X_PADDING;
+
+	drw_setscheme(drw, scheme[SchemeTagNormal]);
+	drw_circle_bordered(drw, x, BAR_Y_PADDING, tags_width - BAR_X_PADDING, TEXTW(tags[0]), 1, 0);
+
+	// draw tags
+	static int prev_selected = -1;
+	static int start_x = -1;
+	static int end_x = -1;
+	static int anim_x = 0;
+	static float t = 0;
 	for (i = 0; i < LENGTH(tags); i++)
 	{
 		w = TEXTW(tags[i]);
-		drw_setscheme(drw, scheme[m->tagset[m->seltags] & 1 << i ? SchemeSel : SchemeNorm]);
-		drw_text(drw, x, 0, w, bh, lrpad / 2, tags[i], urg & 1 << i);
+		if (m->tagset[m->seltags] & 1 << i)
+		{
+			if (prev_selected != i)
+			{
+				start_x = anim_x;
+				end_x = x;
+				prev_selected = i;
+				t = 0;
+			}
+			else
+			{
+				if (t < 1)
+				{
+					// https://www.youtube.com/watch?v=_xzz8qRW8tY
+					anim_x = end_x * t + start_x * (1 - t);
+					t += 0.25;
+				}
+				else
+				{
+					// floating point errors :)
+					anim_x = end_x;
+				}
+			}
+			drw_setscheme(drw, scheme[SchemeSel]);
+			drw_circle_bordered(drw, anim_x, BAR_Y_PADDING, w, w, 1, 0);
+		}
+
+		if (urg & 1 << i)
+		{
+			drw_setscheme(drw, scheme[SchemeTagNormal]);
+			drw_circle_bordered(drw, x, BAR_Y_PADDING, w, w, 1, 1);
+		}
+
+		drw_setscheme(drw, scheme[SchemeNorm]);
+		drw_text_no_bg(drw, x, BAR_Y_PADDING, w, w, lrpad / 2, tags[i], urg & 1 << i);
+
 		if (occ & 1 << i)
-			drw_rect(drw, x + boxs, boxs, boxw, boxw,
-					 m == selmon && selmon->sel && selmon->sel->tags & 1 << i,
-					 urg & 1 << i);
-		x += w;
+		{
+			drw_setscheme(drw, scheme[SchemeTagCircle]);
+			drw_circle(drw, x, BAR_Y_PADDING, w, 0, 1);
+		}
+
+		x += w + BAR_X_PADDING;
 	}
+
+	// draw ltsymbol
 	w = blw = TEXTW(m->ltsymbol);
-	drw_setscheme(drw, scheme[SchemeNorm]);
-	x = drw_text(drw, x, 0, w, bh, lrpad / 2, m->ltsymbol, 0);
-
-	if ((w = m->ww - tw - x) > bh)
 	{
-		if (m->sel)
-		{
-			drw_setscheme(drw, scheme[SchemeNorm]);
-
-			m->name_scroll += 0.8;
-			if (x + m->name_scroll >= m->ww - tw - 10)
-				m->name_scroll = 0;
-
-			unsigned int width = m->name_scroll > w ? 0 : w - m->name_scroll;
-			drw_text(drw, x + m->name_scroll, 0, width, bh, lrpad / 2, m->sel->name, 0);
-
-			if (m->sel->isfloating)
-				drw_rect(drw, x + boxs, boxs, boxw, boxw, m->sel->isfixed, 0);
-		}
-		else
-		{
-			drw_setscheme(drw, scheme[SchemeNorm]);
-			drw_rect(drw, x, 0, w, bh, 1, 1);
-		}
+		drw_setscheme(drw, scheme[SchemeTagNormal]);
+		int oldx = x;
+		x = drw_text(drw, x, BAR_Y_PADDING, w, TEXTW(tags[0]), lrpad / 2, m->ltsymbol, 0);
+		drw_setscheme(drw, scheme[SchemeTagCircle]);
+		drw_circle(drw, oldx, BAR_Y_PADDING, w, 0, 1);
 	}
-	drw_map(drw, m->barwin, 0, 0, m->ww, bh);
+	return x;
 }
 
-void drawbars(void)
+static int drawbar_tags_dryrun(Monitor *m)
+{
+	int x = BAR_X_PADDING;
+	for (size_t i = 0; i < LENGTH(tags); i++)
+		x += TEXTW(tags[i]) + BAR_X_PADDING;
+
+	x += TEXTW(m->ltsymbol);
+	return x;
+}
+
+void drawbar(Monitor *m, float deltatime)
+{
+	int x, tw = 0;
+	if (!m->showbar)
+		return;
+
+	// clear out the whole bar for the scrolling title
+	// IXME: remove once done
+	drw_setscheme(drw, scheme[SchemeNorm]);
+	drw_rect(drw, 0, 0, m->ww, bh, 1, 1);
+
+	/* draw widgets */
+	tw = widgets_draw(m);
+
+	// dry run for tags so we can scroll the title properly
+	x = drawbar_tags_dryrun(m);
+
+	// draw scrolling title
+	if (m->sel)
+	{
+		size_t txtw = TEXTW(m->sel->name);
+		drw_setscheme(drw, scheme[SchemeNorm]);
+
+		m->name_scroll += 1.4;
+		if (x + m->name_scroll >= m->ww - tw)
+			m->name_scroll = 0;
+
+		int width = txtw;
+		if (x + m->name_scroll + txtw >= m->ww - tw)
+		{
+			size_t pixels_chopped = (x + m->name_scroll + txtw) - (m->ww - tw);
+			width -= pixels_chopped;
+			if (width < 0)
+				width = 0;
+
+			size_t off = (m->ww - tw) - x;
+
+			drw_text_no_bg(drw, x + m->name_scroll - off, BAR_Y_PADDING, TEXTW(m->sel->name), TEXTW(tags[0]), 0, m->sel->name, 0);
+		}
+
+		drw_text_no_bg(drw, x + m->name_scroll, BAR_Y_PADDING, width, TEXTW(tags[0]), 0, m->sel->name, 0);
+	}
+	else
+	{
+		// drw_setscheme(drw, scheme[SchemeNorm]);
+		// drw_rect(drw, x, BAR_Y_PADDING, w, bh, 1, 1);
+	}
+
+	drawbar_tags(m);
+
+	drw_map(drw, m->barwin, BAR_X_PADDING, BAR_Y_PADDING, m->ww, bh);
+}
+
+void drawbars(float deltatime)
 {
 	Monitor *m;
 
 	for (m = mons; m; m = m->next)
-		drawbar(m);
+		drawbar(m, deltatime);
 }
 
 void enternotify(XEvent *e)
@@ -918,15 +957,6 @@ void enternotify(XEvent *e)
 	else if (!c || c == selmon->sel)
 		return;
 	focus(c);
-}
-
-void expose(XEvent *e)
-{
-	Monitor *m;
-	XExposeEvent *ev = &e->xexpose;
-
-	if (ev->count == 0 && (m = wintomon(ev->window)))
-		drawbar(m);
 }
 
 void focus(Client *c)
@@ -954,7 +984,6 @@ void focus(Client *c)
 		XDeleteProperty(dpy, root, netatom[NetActiveWindow]);
 	}
 	selmon->sel = c;
-	drawbars();
 }
 
 /* there are some broken focus acquiring clients needing extra handling */
@@ -983,7 +1012,7 @@ void focusstack(const Arg *arg)
 {
 	Client *c = NULL, *i;
 
-	if (!selmon->sel || (selmon->sel->isfullscreen && lockfullscreen))
+	if (!selmon->sel || (selmon->sel->isfullscreen && (int)lockfullscreen))
 		return;
 	if (arg->i > 0)
 	{
@@ -1256,7 +1285,7 @@ void monocle(Monitor *m)
 		if (ISVISIBLE(c))
 			n++;
 	if (n > 0) /* override layout symbol */
-		snprintf(m->ltsymbol, sizeof m->ltsymbol, "[%d]", n);
+		snprintf(m->ltsymbol, sizeof m->ltsymbol, "%d", n);
 	for (c = nexttiled(m->clients); c; c = nexttiled(c->next))
 		resize(c, m->wx, m->wy, m->ww - 2 * c->bw, m->wh - 2 * c->bw, 0);
 }
@@ -1304,7 +1333,6 @@ void movemouse(const Arg *arg)
 		switch (ev.type)
 		{
 		case ConfigureRequest:
-		case Expose:
 		case MapRequest:
 			handler[ev.type](&ev);
 			break;
@@ -1361,9 +1389,7 @@ void propertynotify(XEvent *e)
 	Window trans;
 	XPropertyEvent *ev = &e->xproperty;
 
-	if ((ev->window == root) && (ev->atom == XA_WM_NAME))
-		updatestatus();
-	else if (ev->state == PropertyDelete)
+	if (ev->state == PropertyDelete)
 		return; /* ignore */
 	else if ((c = wintoclient(ev->window)))
 	{
@@ -1381,14 +1407,11 @@ void propertynotify(XEvent *e)
 			break;
 		case XA_WM_HINTS:
 			updatewmhints(c);
-			drawbars();
 			break;
 		}
 		if (ev->atom == XA_WM_NAME || ev->atom == netatom[NetWMName])
 		{
 			updatetitle(c);
-			if (c == c->mon->sel)
-				drawbar(c->mon);
 		}
 		if (ev->atom == netatom[NetWMWindowType])
 			updatewindowtype(c);
@@ -1464,7 +1487,6 @@ void resizemouse(const Arg *arg)
 		switch (ev.type)
 		{
 		case ConfigureRequest:
-		case Expose:
 		case MapRequest:
 			handler[ev.type](&ev);
 			break;
@@ -1503,7 +1525,6 @@ void restack(Monitor *m)
 	XEvent ev;
 	XWindowChanges wc;
 
-	drawbar(m);
 	if (!m->sel)
 		return;
 	if (m->sel->isfloating || !m->lt[m->sellt]->arrange)
@@ -1545,7 +1566,9 @@ void run(void)
 {
 	XEvent ev;
 	struct timeval tvstart, tvend;
-	const float update_interval_sec = 1 / 60.f;
+	const float update_interval_sec = 1.f / 30.f;
+	float deltatime = 0;
+
 	/* main event loop */
 	XSync(dpy, False);
 	while (running)
@@ -1554,7 +1577,7 @@ void run(void)
 
 		bool redraw = widgets_update_periodic(&tvstart);
 		if (redraw || scroll_window_name)
-			drawbar(selmon);
+			drawbar(selmon, deltatime);
 
 		while (XPending(dpy))
 		{
@@ -1565,11 +1588,12 @@ void run(void)
 
 		gettimeofday(&tvend, NULL);
 
+		// Limit wm framerate
 		const double startsec = timeval_to_sec(&tvstart);
 		const double endsec = timeval_to_sec(&tvend);
-		const double frametime = endsec - startsec;
-		if (frametime < update_interval_sec)
-			usleep((update_interval_sec - frametime) * 1000000);
+		deltatime = (float)(endsec - startsec);
+		if (deltatime < update_interval_sec)
+			usleep((update_interval_sec - deltatime) * 1000000);
 	}
 }
 
@@ -1700,8 +1724,6 @@ void setlayout(const Arg *arg)
 	strncpy(selmon->ltsymbol, selmon->lt[selmon->sellt]->symbol, sizeof selmon->ltsymbol);
 	if (selmon->sel)
 		arrange(selmon);
-	else
-		drawbar(selmon);
 }
 
 /* arg > 1.0 will set mfact absolutely */
@@ -1742,7 +1764,7 @@ void setup(void)
 	if (!drw_fontset_create(drw, fonts, LENGTH(fonts)))
 		die("no fonts could be loaded.");
 	lrpad = drw->fonts->h;
-	bh = drw->fonts->h + 2;
+	bh = drw->fonts->h + 18;
 	updategeom();
 	/* init atoms */
 	utf8string = XInternAtom(dpy, "UTF8_STRING", False);
@@ -1777,7 +1799,6 @@ void setup(void)
 
 	/* init bars */
 	updatebars();
-	updatestatus();
 	/* supporting window for NetWMCheck */
 	wmcheckwin = XCreateSimpleWindow(dpy, root, 0, 0, 1, 1, 0, 0, 0);
 	XChangeProperty(dpy, wmcheckwin, netatom[NetWMCheck], XA_WINDOW, 32,
@@ -2207,13 +2228,6 @@ void updatesizehints(Client *c)
 		c->maxa = c->mina = 0.0;
 	c->isfixed = (c->maxw && c->maxh && c->maxw == c->minw && c->maxh == c->minh);
 	c->hintsvalid = 1;
-}
-
-void updatestatus(void)
-{
-	if (!gettextprop(root, XA_WM_NAME, stext, sizeof(stext)))
-		strcpy(stext, "dwm-" VERSION);
-	drawbar(selmon);
 }
 
 void updatetitle(Client *c)

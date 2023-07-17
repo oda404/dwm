@@ -2,8 +2,8 @@
 #ifndef DWM_MICROPHONE_WIDGET_H
 #define DWM_MICROPHONE_WIDGET_H
 
-#include "../widget.h"
-#include "../arg.h"
+#include <dwm/widget.h>
+#include <dwm/arg.h>
 #include <stddef.h>
 
 int widget_microphone_init(struct S_Widget *w);

@@ -2,7 +2,7 @@
 #ifndef DWM_AUDIOCON_BACKEND_PULSE_H
 #define DWM_AUDIOCON_BACKEND_PULSE_H
 
-#include "../audiocon.h"
+#include <dwm/audiocon.h>
 
 int pulsebackend_init();
 void pulsebackend_detroy();

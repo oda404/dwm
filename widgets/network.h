@@ -2,7 +2,7 @@
 #ifndef DWM_NETWORK_WIDGET_H
 #define DWM_NETWORK_WIDGET_H
 
-#include "../widget.h"
+#include <dwm/widget.h>
 #include <string.h>
 #include <stdlib.h>
 

@@ -1,6 +1,6 @@
 
-#include "widget.h"
-#include "util.h"
+#include <dwm/widget.h>
+#include <dwm/util.h>
 
 void widget_lock(Widget *w)
 {

@@ -6,13 +6,13 @@ include config.mk
 BUILDDIR ?= .
 
 SRC = \
-drw.c dwm.c util.c widget.c widgets/backlight.c widgets/battery.c \
+core/drw.c core/dwm.c core/util.c core/widget.c core/colors.c widgets/backlight.c widgets/battery.c \
 widgets/microphone.c widgets/network.c widgets/speakers.c widgets/time.c \
 ${AUDIOCON_SRC} ${PULSE_SRC}
 
 OBJ = ${SRC:%.c=$(BUILDDIR)/%.c.o}
 
-all: options dwm
+all: options $(BUILDDIR)/dwm
 
 options:
 	@echo dwm build options:
@@ -29,11 +29,11 @@ ${OBJ}: config.h config.mk
 config.h:
 	cp config.def.h $@
 
-dwm: ${OBJ}
+$(BUILDDIR)/dwm: ${OBJ}
 	${CC} -o $@ ${OBJ} ${LDFLAGS}
 
 clean:
-	rm -f dwm ${OBJ} dwm-${VERSION}.tar.gz
+	rm -f $(BUILDDIR)/dwm ${OBJ} dwm-${VERSION}.tar.gz
 
 dist: clean
 	mkdir -p dwm-${VERSION}
@@ -45,7 +45,7 @@ dist: clean
 
 install: all
 	mkdir -p ${DESTDIR}${PREFIX}/bin
-	cp -f dwm ${DESTDIR}${PREFIX}/bin
+	cp -f $(BUILDDIR)/dwm ${DESTDIR}${PREFIX}/bin
 	chmod 755 ${DESTDIR}${PREFIX}/bin/dwm
 	mkdir -p ${DESTDIR}${MANPREFIX}/man1
 	sed "s/VERSION/${VERSION}/g" < dwm.1 > ${DESTDIR}${MANPREFIX}/man1/dwm.1

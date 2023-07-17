@@ -1,60 +1,55 @@
 /* See LICENSE file for copyright and license details. */
 
+#include <dwm/colors.h>
+#include <dwm/widget.h>
+
+#define BAR_X_PADDING 4
+#define BAR_Y_PADDING 4
+
 /* appearance */
 static const unsigned int borderpx = 4; /* border pixel of windows */
 static const unsigned int snap = 32;	/* snap pixel */
 static const int showbar = 1;			/* 0 means no bar */
 static const int topbar = 1;			/* 0 means bottom bar */
 static const bool scroll_window_name = true;
-static const char *fonts[] = {"Ubuntu Mono Nerd Font:size=15:style=Regular"};
-static const char dmenufont[] = "Hack:size=13";
-static const char col_black[] = "#000000";
-static const char col_gray0[] = "#111111";
-static const char col_gray1[] = "#222222";
-static const char col_gray2[] = "#444444";
-static const char col_gray3[] = "#bbbbbb";
-static const char col_gray4[] = "#eeeeee";
-static const char col_cyan[] = "#005577";
-static const char col_purple[] = "#5F0A87";
-static const char col_red[] = "#FF0000";
+static const char *fonts[] = {"Ubuntu Mono Nerd Font:size=15:style=Bold"};
+static const char dmenufont[] = "Ubuntu Mono Nerd Font:size=15:style=Bold";
+
 static const char *colors[][3] = {
 	/*               fg         bg          border   */
 	[SchemeNorm] = {col_gray3, col_black, col_black},
-	[SchemeSel] = {col_red, col_black, col_black},
-	//[SchemeSelWindow] = { col_gray4, "#000000", col_purple },
-	[SchemeWidget] = {col_gray3, col_black, col_black},
+	[SchemeSel] = {col_gray3, col_purple2, col_black},
+	[SchemeTagNormal] = {col_gray3, col_purple1, col_black},
+	[SchemeTagCircle] = {col_purple3, col_black, col_black},
 };
 
 /* tagging */
 static const char *tags[] = {"1", "2", "3", "4", "5"};
 
 static const Rule rules[] = {
-	/* xprop(1):
-	 *	WM_CLASS(STRING) = instance, class
-	 *	WM_NAME(STRING) = title
-	 */
 	/* class      instance    title       tags mask     isfloating   monitor */
-	{"Gimp", NULL, NULL, 0, 1, -1},
-	{"Firefox", NULL, NULL, 1 << 8, 0, -1},
+	// {"Gimp", NULL, NULL, 0, 1, -1},
+	// {"Firefox", NULL, NULL, 1 << 8, 0, -1},
 };
 
+/* Commands executed when dwm starts */
 static const char *runners[] = {
 	"systemctl start mac",
 	/* Wallpaper */
-	//"feh --bg-scale /home/oda/Downloads/Black.png",
+	// "feh --bg-scale /home/oda/Downloads/bg.jpeg",
 	/* Tap to click */
 	"xinput set-prop \"ELAN469D:00 04F3:304B Touchpad\" $(xinput list-props \"ELAN469D:00 04F3:304B Touchpad\" | grep \"libinput Tapping Enabled (\" | cut -d ')' -f 1 - | cut -d '(' -f 2 -) 1",
 	/* Window compositor */
 	//"picom -b -e 0  --backend glx --glx-no-stencil --glx-no-rebind-pixmap -f -I 0.05 -O 0.08 --opacity-rule \"90:class_g = 'Alacritty'\" --opacity-rule \"75:class_g = 'dwm'\""
 };
 
+/* Bar widgets */
 #include "widgets/time.h"
 #include "widgets/speakers.h"
 #include "widgets/microphone.h"
 #include "widgets/battery.h"
 #include "widgets/network.h"
 #include "widgets/backlight.h"
-#include "widget.h"
 
 #define WIDGET_BATTERY 1
 #define WIDGET_TIME 0
@@ -71,7 +66,7 @@ static Widget widgets[] = {
 		.periodic_update = true,
 		.update_interval = {.tv_sec = 5, .tv_usec = 0}},
 	[WIDGET_BACKLIGHT] = {.icon = "", .init = widget_backlight_init, .update = NULL, .destroy = widget_backlight_destroy, .periodic_update = false},
-	[WIDGET_NETWORK] = {.init = widget_network_init, .update = widget_network_update, .destroy = widget_network_destroy, .periodic_update = true, .update_interval = {.tv_sec = 5, .tv_usec = 0}},
+	[WIDGET_NETWORK] = {.init = widget_network_init, .update = widget_network_update, .destroy = widget_network_destroy, .periodic_update = true, .update_interval = {.tv_sec = 2, .tv_usec = 0}},
 	[WIDGET_TIME] = {.icon = NULL, .init = widget_time_init, .update = widget_time_update, .destroy = widget_time_destroy, .periodic_update = true, .update_interval = {.tv_sec = 1, .tv_usec = 0}},
 	[WIDGET_MICROPHONE] = {.icon = "", .init = widget_microphone_init, .update = NULL, .destroy = widget_microphone_destroy, .periodic_update = false},
 	[WIDGET_SPEAKERS] = {.icon = " ", .init = widget_speakers_init, .update = NULL, .destroy = widget_speakers_destroy, .periodic_update = false}};
@@ -84,9 +79,9 @@ static const int lockfullscreen = 1; /* 1 will force focus on the fullscreen win
 
 static const Layout layouts[] = {
 	/* symbol     arrange function */
-	{"[T] |", tile}, /* first entry is default */
-	{"[F] |", NULL}, /* no layout function means floating behavior */
-	{"[M] |", monocle},
+	{"T", tile}, /* first entry is default */
+	{"F", NULL}, /* no layout function means floating behavior */
+	{"M", monocle},
 };
 
 /* key definitions */
@@ -97,15 +92,9 @@ static const Layout layouts[] = {
 		{MODKEY | ShiftMask, KEY, tag, {.ui = 1 << TAG}},          \
 		{MODKEY | ControlMask | ShiftMask, KEY, toggletag, {.ui = 1 << TAG}},
 
-/* helper for spawning shell commands in the pre dwm-5.0 fashion */
-#define SHCMD(cmd)                                           \
-	{                                                        \
-		.v = (const char *[]) { "/bin/sh", "-c", cmd, NULL } \
-	}
-
 /* commands */
 static char dmenumon[2] = "0"; /* component of dmenucmd, manipulated in spawn() */
-static const char *dmenucmd[] = {"dmenu_run", "-m", dmenumon, "-fn", dmenufont, "-nb", col_black, "-nf", col_gray3, "-sb", col_red, "-sf", col_gray4, NULL};
+static const char *dmenucmd[] = {"dmenu_run", "-b", "-m", dmenumon, "-fn", dmenufont, "-nb", col_black, "-nf", col_gray3, "-sb", col_purple2, "-sf", col_gray4, NULL};
 static const char *termcmd[] = {"alacritty", NULL};
 
 static const void *speakers_plus[] = {"+", &widgets[WIDGET_SPEAKERS], NULL};

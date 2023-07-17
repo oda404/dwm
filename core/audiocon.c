@@ -1,5 +1,5 @@
 
-#include "audiocon.h"
+#include <dwm/audiocon.h>
 #include <stddef.h>
 
 typedef int (*backend_init)();
@@ -9,7 +9,7 @@ typedef int (*backend_on_volume_change_t)(volume_change_cb_t, void *userdata);
 typedef int (*backend_set_volume_t)(u32 vol);
 
 #if defined(USE_PULSE)
-#include "audiocon_backends/pulse.h"
+#include "../audiocon_backends/pulse.h"
 static backend_init g_backend_init = pulsebackend_init;
 static backend_destroy g_backend_destroy = pulsebackend_detroy;
 

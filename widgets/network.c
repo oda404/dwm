@@ -1,6 +1,5 @@
 
 #include "network.h"
-#include "../util.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>

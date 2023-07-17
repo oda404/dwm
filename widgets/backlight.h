@@ -1,8 +1,8 @@
 #ifndef DWM_BACKLIGHT_WIDGET_H
 #define DWM_BACKLIGHT_WIDGET_H
 
-#include "../widget.h"
-#include "../arg.h"
+#include <dwm/widget.h>
+#include <dwm/arg.h>
 #include <stddef.h>
 
 int widget_backlight_init(struct S_Widget *w);

@@ -1,6 +1,7 @@
 
 #include "speakers.h"
-#include "../audiocon.h"
+#include <dwm/audiocon.h>
+#include <dwm/colors.h>
 #include <stdio.h>
 
 static void on_volume_change(u32 volume, void *userdata)
@@ -23,6 +24,7 @@ int widget_speakers_init(struct S_Widget *w)
 		return 1;
 
 	w->active = true;
+	w->bgcolor = col_purple5;
 
 	return 0;
 }
