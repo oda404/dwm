@@ -676,6 +676,11 @@ createmon(void)
 	m->lt[0] = &layouts[0];
 	m->lt[1] = &layouts[1 % LENGTH(layouts)];
 	m->name_scroll = 0;
+	m->prev_selected = -1;
+	m->start_x = -1;
+	m->end_x = -1;
+	m->anim_x = 0;
+	m->t = 0;
 	strncpy(m->ltsymbol, layouts[0].symbol, sizeof m->ltsymbol);
 	return m;
 }
@@ -803,39 +808,33 @@ static int drawbar_tags(Monitor *m)
 	drw_circle_bordered(drw, x, BAR_Y_PADDING, tags_width - BAR_X_PADDING, TEXTW(tags[0]), 1, 0);
 
 	// draw tags
-	static int prev_selected = -1;
-	static int start_x = -1;
-	static int end_x = -1;
-	static int anim_x = 0;
-	static float t = 0;
 	for (i = 0; i < LENGTH(tags); i++)
 	{
 		w = TEXTW(tags[i]);
 		if (m->tagset[m->seltags] & 1 << i)
 		{
-			if (prev_selected != i)
+			if (m->prev_selected != i)
 			{
-				start_x = anim_x;
-				end_x = x;
-				prev_selected = i;
-				t = 0;
+				m->start_x = m->anim_x;
+				m->end_x = x;
+				m->prev_selected = i;
+				m->t = 0;
 			}
 			else
 			{
-				if (t < 1)
+				if (m->t < 1)
 				{
-					// https://www.youtube.com/watch?v=_xzz8qRW8tY
-					anim_x = end_x * t + start_x * (1 - t);
-					t += 0.25;
+					m->anim_x = m->end_x * m->t + m->start_x * (1 - m->t);
+					m->t += 0.25;
 				}
 				else
 				{
 					// floating point errors :)
-					anim_x = end_x;
+					m->anim_x = m->end_x;
 				}
 			}
 			drw_setscheme(drw, scheme[SchemeSel]);
-			drw_circle_bordered(drw, anim_x, BAR_Y_PADDING, w, w, 1, 0);
+			drw_circle_bordered(drw, m->anim_x, BAR_Y_PADDING, w, w, 1, 0);
 		}
 
 		if (urg & 1 << i)
@@ -1577,7 +1576,7 @@ void run(void)
 
 		bool redraw = widgets_update_periodic(&tvstart);
 		if (redraw || scroll_window_name)
-			drawbar(selmon, deltatime);
+			drawbars(deltatime);
 
 		while (XPending(dpy))
 		{

@@ -27,6 +27,12 @@ struct Monitor
     Window barwin;
     const Layout *lt[2];
     float name_scroll;
+
+    int prev_selected;
+    int start_x;
+    int end_x;
+    int anim_x;
+    float t;
 };
 
 #endif // !DWM_MONITOR_H
