@@ -2,7 +2,7 @@
 #ifndef DWM_AUDIOCON_H
 #define DWM_AUDIOCON_H
 
-#include "types.h"
+#include <dwm/types.h>
 
 typedef void (*volume_change_cb_t)(u32 newvol, void *userdata);
 

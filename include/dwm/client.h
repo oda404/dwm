@@ -3,8 +3,8 @@
 #define DWM_CLIENT_H
 
 typedef struct Monitor Monitor;
-
 typedef struct Client Client;
+
 struct Client
 {
     char name[256];

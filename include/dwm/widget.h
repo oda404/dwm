@@ -15,7 +15,7 @@ typedef struct S_Widget
 	const char *bgcolor;
 
 	/* The body of the widget, displayed to the left of the icon, if any. */
-#define WIDGET_TEXT_MAXLEN 64
+#define WIDGET_TEXT_MAXLEN 72
 	char text[WIDGET_TEXT_MAXLEN];
 
 	/* Widget specific data, if any. */

@@ -741,7 +741,7 @@ dirtomon(int dir)
 int widgets_draw(Monitor *m)
 {
 	int tw = 0;
-#define TEXTBUF_MAX 32
+#define TEXTBUF_MAX (WIDGET_TEXT_MAXLEN + 12)
 	char textbuf[TEXTBUF_MAX] = {0};
 
 	for (size_t i = 0; i < LENGTH(widgets); ++i)
