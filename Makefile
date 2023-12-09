@@ -3,12 +3,10 @@
 
 include config.mk
 
-BUILDDIR ?= .
-
 SRC = \
 core/drw.c core/dwm.c core/util.c core/widget.c core/colors.c widgets/backlight.c widgets/battery.c \
-widgets/microphone.c widgets/network.c widgets/speakers.c widgets/time.c \
-${AUDIOCON_SRC} ${PULSE_SRC}
+widgets/microphone.c widgets/network.c widgets/speakers.c widgets/time.c widgets/cpuinfo/cpuload.c \
+$(EXTRA_SRC)
 
 OBJ = ${SRC:%.c=$(BUILDDIR)/%.c.o}
 

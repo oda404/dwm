@@ -6,6 +6,7 @@
 #include <ifaddrs.h>
 #include <netdb.h>
 #include <net/if.h>
+#include <linux/if_ppp.h>
 
 #define NETWORK_NAME_SIZE 32
 #define NETWORK_IPV4_SIZE 16
@@ -59,6 +60,9 @@ bool widget_network_update(struct S_Widget *w)
 		strncpy(w->text, "Internal error!", WIDGET_TEXT_MAXLEN);
 		goto quit;
 	}
+
+	// struct ppp_stats ppp;
+	// struct ifreq req;
 
 	snprintf(w->text, WIDGET_TEXT_MAXLEN, "%s (%s)", avail_ifa->ifa_name, host);
 

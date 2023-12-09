@@ -2,6 +2,7 @@
 VERSION = 6.3
 
 # Customize below to fit your system
+BUILDDIR = build
 
 # paths
 PREFIX = /usr/local
@@ -21,35 +22,45 @@ FREETYPEINC = /usr/include/freetype2
 #FREETYPEINC = ${X11INC}/freetype2
 #MANPREFIX = ${PREFIX}/man
 
-# Enable the audio connection API. Used for getting/setting the output/input sound volumes.
-# Note that this also requires a backend. See below.
+# Audio control/display API
 AUDIOCON_SRC = core/audiocon.c
-AUDICON_FLAGS = -DUSE_AUDIOCON
+AUDIOCON_FLAGS = -DUSE_AUDIOCON
 
-# PulseAudio backend for the audio connection.
+# PulseAudio support for audiocon
+HAVE_PULSE = 1
 PULSE_SRC = audiocon_backends/pulse.c
 PULSE_LIBS = -lpulse
 PULSE_FLAGS = -DUSE_PULSE
 
 # includes and libs
 INCS = -I${X11INC} -I${FREETYPEINC}
-LIBS = -L${X11LIB} -lX11 ${XINERAMALIBS} ${FREETYPELIBS} ${PULSE_LIBS}
-
-MARCH = native
+LIBS = -L${X11LIB} -lX11 ${XINERAMALIBS} ${FREETYPELIBS}
 
 # flags
 CPPFLAGS = -D_DEFAULT_SOURCE -D_BSD_SOURCE -D_POSIX_C_SOURCE=200809L -DVERSION=\"${VERSION}\" \
-${XINERAMAFLAGS} ${AUDICON_FLAGS} ${PULSE_FLAGS} -Iinclude
+${XINERAMAFLAGS} -Iinclude
+
+# Config options
+ifeq ($(HAVE_PULSE), 1)
+    HAVE_AUDIOCON = 1
+	EXTRA_SRC += $(PULSE_SRC)
+	LIBS += $(PULSE_LIBS)
+	CPPFLAGS += $(PULSE_FLAGS)
+endif
+
+ifeq ($(HAVE_AUDIOCON), 1)
+    EXTRA_SRC += $(AUDIOCON_SRC)
+	CPPFLAGS += $(AUDIOCON_FLAGS)
+endif
 
 CFLAGS   = -std=c2x -Wall -Wno-constant-logical-operand -Werror=implicit-function-declaration \
--Wno-deprecated-declarations -O3 -march=${MARCH} ${INCS} ${CPPFLAGS}
+-Wno-deprecated-declarations -O3 -march=native ${INCS} ${CPPFLAGS}
 
 LDFLAGS  = ${LIBS}
 
-BUILDDIR = build
-
 # Solaris
 #CFLAGS = -fast ${INCS} -DVERSION=\"${VERSION}\"
+
 #LDFLAGS = ${LIBS}
 
 # compiler and linker
