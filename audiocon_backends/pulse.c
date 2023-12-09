@@ -4,6 +4,7 @@
 #include <string.h>
 #include <threads.h>
 #include <pulse/pulseaudio.h>
+#include <math.h>
 
 typedef struct S_PulseAudioData
 {
@@ -36,7 +37,7 @@ static void sink_info_cb(pa_context *c, const pa_sink_info *info, int eol, void 
     if (!info)
         return;
 
-    unsigned int vol = ((float)pa_cvolume_avg(&info->volume) / PA_VOLUME_NORM) * 100;
+    unsigned int vol = ceil(((float)pa_cvolume_avg(&info->volume) / PA_VOLUME_NORM) * 100);
 
     /* Cache the sink name */
     if (g_pulsedata.def_sink_name)
