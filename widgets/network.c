@@ -15,8 +15,9 @@
 
 float bytes_to_human_readable(u32 bytes, char unit[4])
 {
-	float fbytes = bytes;
+	float fbytes = bytes / 1024.f;
 	u8 i = 0;
+
 	while (fbytes >= 1024)
 	{
 		++i;
@@ -28,15 +29,12 @@ float bytes_to_human_readable(u32 bytes, char unit[4])
 		switch (i)
 		{
 		case 0:
-			strcpy(unit, "B");
-			break;
-		case 1:
 			strcpy(unit, "KiB");
 			break;
-		case 2:
+		case 1:
 			strcpy(unit, "MiB");
 			break;
-		case 3:
+		case 2:
 			strcpy(unit, "GiB");
 			break;
 		}
@@ -44,33 +42,35 @@ float bytes_to_human_readable(u32 bytes, char unit[4])
 	return fbytes;
 }
 
-int widget_network_init(struct S_Widget *w)
+static struct ifaddrs *get_main_ifa(struct ifaddrs *ifaddr)
 {
-	w->active = true;
-	widget_network_update(w);
+	struct ifaddrs *main_ifa = NULL;
+	for (struct ifaddrs *ifa = ifaddr; ifa; ifa = ifa->ifa_next)
+	{
+		/* Not connected to a host. */
+		if (!ifa->ifa_addr)
+			continue;
 
-	return 0;
+		if (ifa->ifa_flags & IFF_LOOPBACK)
+			continue;
+
+
+		/* We only care about non-loopback, IPv4 interfaces. */
+		switch (ifa->ifa_addr->sa_family)
+		{
+		case AF_INET:
+			main_ifa = ifa;
+			break;
+
+		default:
+			break;
+		}
+	}
+	return main_ifa;
 }
 
-static u32 prev_rx, prev_tx;
-
-bool widget_network_update(struct S_Widget *w)
+static struct ifaddrs *get_packet_ifa_for_inet(struct ifaddrs *ifaddr, struct ifaddrs *inet_ifa)
 {
-	struct ifaddrs *ifaddr = NULL;
-	struct ifaddrs *avail_ifa = NULL;
-
-	char host[NI_MAXHOST] = {0};
-
-	if (getifaddrs(&ifaddr) < 0)
-	{
-		strncpy(w->text, "No interfaces!", WIDGET_TEXT_MAXLEN);
-		return true;
-	}
-
-	static u32 tx = 0, rx = 0;
-	prev_rx = rx;
-	prev_tx = tx;
-
 	for (struct ifaddrs *ifa = ifaddr; ifa; ifa = ifa->ifa_next)
 	{
 		/* Not connected to a host. */
@@ -81,46 +81,79 @@ bool widget_network_update(struct S_Widget *w)
 		switch (ifa->ifa_addr->sa_family)
 		{
 		case AF_PACKET:
-		{
 			if (!ifa->ifa_data)
 				break;
 
-			struct rtnl_link_stats *stats = ifa->ifa_data;
-			tx = stats->tx_bytes;
-			rx = stats->rx_bytes;
-			break;
-		}
-		case AF_INET:
-			avail_ifa = ifa;
-			break;
+			if (strcmp(ifa->ifa_name, inet_ifa->ifa_name) != 0)
+				break;
+
+			return ifa;
 
 		default:
 			break;
 		}
 	}
 
+	return NULL;
+}
+
+static u32 rx, tx, prev_rx, prev_tx;
+
+int widget_network_init(Widget *w)
+{
+	w->active = true;
+	widget_network_update(w);
+	return 0;
+}
+
+bool widget_network_update(Widget *w)
+{
+	prev_rx = rx;
+	prev_tx = tx;
+
+	struct ifaddrs *ifaddr = NULL;
+	if (getifaddrs(&ifaddr) < 0)
+	{
+		snprintf(w->text, WIDGET_TEXT_MAXLEN, "No interfaces!");
+		return true;
+	}
+
+	struct ifaddrs *avail_ifa = get_main_ifa(ifaddr);
 	if (!avail_ifa)
 	{
-		strncpy(w->text, "All interfaces down!", WIDGET_TEXT_MAXLEN);
+		snprintf(w->text, WIDGET_TEXT_MAXLEN, "All interfaces down!");
 		goto quit;
 	}
 
-	size_t structsize = sizeof(struct sockaddr_in);
-	int st = getnameinfo(avail_ifa->ifa_addr, structsize, host, NI_MAXHOST, NULL, 0, NI_NUMERICHOST);
+	struct ifaddrs *packet_ifa = get_packet_ifa_for_inet(ifaddr, avail_ifa);
+	if (packet_ifa)
+	{
+		struct rtnl_link_stats *stats = packet_ifa->ifa_data;
+		rx = stats->rx_bytes;
+		tx = stats->tx_bytes;
+	}
+
+	char host[NI_MAXHOST] = {0};
+	int st = getnameinfo(
+		avail_ifa->ifa_addr,
+		sizeof(struct sockaddr_in),
+		host,
+		NI_MAXHOST,
+		NULL,
+		0,
+		NI_NUMERICHOST);
 
 	if (st != 0)
 	{
-		strncpy(w->text, "Internal error!", WIDGET_TEXT_MAXLEN);
+		snprintf(w->text, WIDGET_TEXT_MAXLEN, "Internall error!");
 		goto quit;
 	}
 
 	char rx_units[4];
 	char tx_units[4];
-
 	float delta_rx = bytes_to_human_readable(rx - prev_rx, rx_units);
 	float delta_tx = bytes_to_human_readable(tx - prev_tx, tx_units);
-
-	snprintf(w->text, WIDGET_TEXT_MAXLEN, "%s (%s) | %05.1f %3s  | %05.1f %3s  |", avail_ifa->ifa_name, host, delta_rx, rx_units, delta_tx, tx_units);
+	snprintf(w->text, WIDGET_TEXT_MAXLEN, "%s (%s) %5.1f %s  %5.1f %s  ", avail_ifa->ifa_name, host, delta_rx, rx_units, delta_tx, tx_units);
 
 quit:
 	freeifaddrs(ifaddr);
