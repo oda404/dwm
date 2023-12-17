@@ -56,7 +56,7 @@ static void source_info_cb(pa_context *c, const pa_source_info *info, int eol, v
     if (!info)
         return;
 
-    unsigned int vol = ((float)pa_cvolume_avg(&info->volume) / PA_VOLUME_NORM) * 100;
+    unsigned int vol = ceil(((float)pa_cvolume_avg(&info->volume) / PA_VOLUME_NORM) * 100);
 
     /* Cache the src name */
     if (g_pulsedata.def_src_name)
