@@ -8,24 +8,22 @@ static void on_volume_change(u32 volume, void *userdata)
 {
 	Widget *w = (Widget *)userdata;
 
-	mtx_lock(&w->_lock);
+	widget_lock(w);
 	snprintf(w->text, WIDGET_TEXT_MAXLEN, "%u%%", volume);
 	w->_dirty = true;
-	mtx_unlock(&w->_lock);
+	widget_unlock(w);
 }
 
-int widget_speakers_init(struct S_Widget *w)
+int widget_speakers_init(Widget *w)
 {
-	w->_should_lock_on_access = true;
-	if (mtx_init(&w->_lock, mtx_plain | mtx_recursive) == thrd_error)
-		return 1;
+	if (widget_init_locking(w) < 0)
+		return -1;
 
 	if (audiocon_on_output_volume_change(on_volume_change, w) != 0)
-		return 1;
+		return -1;
 
 	w->active = true;
 	w->bgcolor = col_purple5;
-
 	return 0;
 }
 
@@ -37,7 +35,7 @@ void widget_speakers_event(const Arg *arg)
 	const char *cmd = ((const char **)arg->v)[0];
 	Widget *w = ((Widget **)arg->v)[1];
 
-	if (!cmd || !w)
+	if (!w || !cmd)
 		return;
 
 	switch (*cmd)
@@ -59,7 +57,7 @@ void widget_speakers_event(const Arg *arg)
 	}
 }
 
-void widget_speakers_destroy(struct S_Widget *w)
+void widget_speakers_destroy(Widget *w)
 {
-	mtx_destroy(&w->_lock);
+	widget_destroy_locking(w);
 }

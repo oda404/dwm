@@ -1556,11 +1556,11 @@ static bool widgets_update_periodic(const struct timeval *now)
 
 	for (size_t i = 0; i < LENGTH(widgets); ++i)
 	{
-		Widget *widget = &widgets[i];
-		if (!widget->periodic_update)
+		Widget *w = &widgets[i];
+		if (!w->update)
 			continue;
 
-		if (widget_update(now, widget))
+		if (widget_update(now, w))
 			shouldredraw = true;
 	}
 

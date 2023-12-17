@@ -5,6 +5,7 @@
 #include <sys/time.h>
 #include <stdbool.h>
 #include <threads.h>
+#include <dwm/types.h>
 
 typedef struct S_Widget
 {
@@ -18,8 +19,6 @@ typedef struct S_Widget
 #define WIDGET_TEXT_MAXLEN 72
 	char text[WIDGET_TEXT_MAXLEN];
 
-	/* Widget specific data, if any. */
-	void *data;
 	/* True if the widget should be updated and drawn. */
 	bool active;
 
@@ -27,16 +26,9 @@ typedef struct S_Widget
 	bool (*update)(struct S_Widget *);
 	void (*destroy)(struct S_Widget *);
 
-	/**
-	 * @brief If the widget is to be updated periodically.
-	 * If true 'update_interval' timeval needs to be set.
-	 * If false the widget is to be updated by other means eg: a keypress.
-	 */
-	bool periodic_update;
 	struct timeval update_interval; // Update interval if the widget is to be updated periodically.
 	struct timeval last_update;
 
-	/* True if the widget has been changed and those changes haven't yet been rendered on screen. */
 	bool _dirty;
 
 	/* These two variables are used for widgets which could/do get updated from another thread.
@@ -48,10 +40,13 @@ typedef struct S_Widget
 	bool _should_lock_on_access;
 } Widget;
 
-void widget_lock(Widget *w);
-void widget_unlock(Widget *w);
-
 int widget_init(Widget *w);
 bool widget_update(const struct timeval *now, Widget *w);
+
+int widget_init_locking(Widget *w);
+void widget_destroy_locking(Widget *w);
+
+void widget_lock(Widget *w);
+void widget_unlock(Widget *w);
 
 #endif // !DWM_WIDGET_H
