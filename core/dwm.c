@@ -46,6 +46,7 @@
 #define VERSION "unknown"
 #endif
 
+#include <dwm/log.h>
 #include <dwm/drw.h>
 #include <dwm/util.h>
 #include <dwm/arg.h>
@@ -515,6 +516,8 @@ void cleanup(void)
 #ifdef USE_AUDIOCON
 	audiocon_destroy();
 #endif
+
+	log_destroy();
 }
 
 void cleanupmon(Monitor *mon)
@@ -1756,6 +1759,8 @@ void setup(void)
 
 	/* clean up any zombies immediately */
 	sigchld(0);
+
+	log_init();
 
 	/* init screen */
 	screen = DefaultScreen(dpy);
