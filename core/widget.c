@@ -47,6 +47,16 @@ void widget_destroy_locking(Widget *w)
     mtx_destroy(&w->_lock);
 }
 
+bool widget_should_be_drawn_on_monitor(Widget *w, u8 mon_num)
+{
+    if (!w->show_on_monitors)
+        return true;
+
+    /* Shitty and incomplete implementation but it works for my use case :) */
+    unsigned long n = strtoul(w->show_on_monitors, NULL, 10);
+    return n == mon_num;
+}
+
 bool widget_update(const struct timeval *tv, Widget *w)
 {
     bool shouldredraw = false;

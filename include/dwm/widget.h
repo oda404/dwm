@@ -31,6 +31,8 @@ typedef struct S_Widget
 
 	bool _dirty;
 
+	const char *show_on_monitors;
+
 	/* These two variables are used for widgets which could/do get updated from another thread.
 	 * For everyone's safety, everytime you access a widget's public members
 	 * (variables without an '_' prefix), you should first call widget_lock(),
@@ -45,6 +47,8 @@ bool widget_update(const struct timeval *now, Widget *w);
 
 int widget_init_locking(Widget *w);
 void widget_destroy_locking(Widget *w);
+
+bool widget_should_be_drawn_on_monitor(Widget *w, u8 mon_num);
 
 void widget_lock(Widget *w);
 void widget_unlock(Widget *w);

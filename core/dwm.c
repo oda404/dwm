@@ -753,6 +753,9 @@ int widgets_draw(Monitor *m)
 		if (!w->active)
 			continue;
 
+		if (!widget_should_be_drawn_on_monitor(w, m->num))
+			continue;
+
 		widget_lock(w);
 
 		size_t textlen = strlen(w->text ? w->text : "");
@@ -766,6 +769,9 @@ int widgets_draw(Monitor *m)
 	{
 		Widget *w = &widgets[i];
 		if (!w->active)
+			continue;
+
+		if (!widget_should_be_drawn_on_monitor(w, m->num))
 			continue;
 
 		size_t textlen = strlen(w->text ? w->text : "");
