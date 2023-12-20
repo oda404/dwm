@@ -442,14 +442,14 @@ void buttonpress(XEvent *e)
 	{
 		i = x = 0;
 		do
-			x += TEXTW(tags[i]);
+			x += TEXTW(tags[i]) + BAR_X_PADDING;
 		while (ev->x >= x && ++i < LENGTH(tags));
 		if (i < LENGTH(tags))
 		{
 			click = ClkTagBar;
 			arg.ui = 1 << i;
 		}
-		else if (ev->x < x + blw)
+		else if (ev->x < x + blw + BAR_X_PADDING)
 			click = ClkLtSymbol;
 		else if (ev->x > selmon->ww - (int)TEXTW(stext))
 			click = ClkStatusText;
