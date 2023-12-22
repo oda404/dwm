@@ -18,9 +18,7 @@ static char *g_weekday_kanjis[] = {
 
 int widget_time_init(struct S_Widget *w)
 {
-	w->active = true;
 	widget_time_update(w);
-
 	return 0;
 }
 
@@ -39,16 +37,13 @@ bool widget_time_update(struct S_Widget *w)
 	static char clockbuf[9];
 	strftime(clockbuf, 9, "%02H:%02M:%02S", timeinfo);
 
-	snprintf(
-		w->text,
-		WIDGET_TEXT_MAXLEN,
+	widget_snprintf_text(
+		w,
 		"%d月%d日(%s) %s",
 		timeinfo->tm_mon + 1,
 		timeinfo->tm_mday,
 		g_weekday_kanjis[timeinfo->tm_wday],
 		clockbuf);
-
-	w->_dirty = true;
 
 	return true;
 }

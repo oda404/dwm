@@ -54,7 +54,6 @@ static struct ifaddrs *get_main_ifa(struct ifaddrs *ifaddr)
 		if (ifa->ifa_flags & IFF_LOOPBACK)
 			continue;
 
-
 		/* We only care about non-loopback, IPv4 interfaces. */
 		switch (ifa->ifa_addr->sa_family)
 		{
@@ -101,7 +100,6 @@ static u32 rx, tx, prev_rx, prev_tx;
 
 int widget_network_init(Widget *w)
 {
-	w->active = true;
 	widget_network_update(w);
 	return 0;
 }
@@ -114,14 +112,15 @@ bool widget_network_update(Widget *w)
 	struct ifaddrs *ifaddr = NULL;
 	if (getifaddrs(&ifaddr) < 0)
 	{
-		snprintf(w->text, WIDGET_TEXT_MAXLEN, "No interfaces!");
+		widget_copy_text(w, "No interfaces!");
 		return true;
 	}
 
 	struct ifaddrs *avail_ifa = get_main_ifa(ifaddr);
 	if (!avail_ifa)
 	{
-		snprintf(w->text, WIDGET_TEXT_MAXLEN, "All interfaces down!");
+		
+		widget_copy_text(w, "All interfaces down!");
 		goto quit;
 	}
 
@@ -145,7 +144,7 @@ bool widget_network_update(Widget *w)
 
 	if (st != 0)
 	{
-		snprintf(w->text, WIDGET_TEXT_MAXLEN, "Internall error!");
+		widget_copy_text(w, "Internall error!");
 		goto quit;
 	}
 
@@ -153,7 +152,7 @@ bool widget_network_update(Widget *w)
 	char tx_units[4];
 	float delta_rx = bytes_to_human_readable(rx - prev_rx, rx_units);
 	float delta_tx = bytes_to_human_readable(tx - prev_tx, tx_units);
-	snprintf(w->text, WIDGET_TEXT_MAXLEN, "%s (%s) %5.1f %s  %5.1f %s  ", avail_ifa->ifa_name, host, delta_rx, rx_units, delta_tx, tx_units);
+	widget_snprintf_text(w, "%s (%s) %5.1f %s  %5.1f %s  ", avail_ifa->ifa_name, host, delta_rx, rx_units, delta_tx, tx_units);
 
 quit:
 	freeifaddrs(ifaddr);

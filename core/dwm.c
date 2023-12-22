@@ -750,16 +750,17 @@ int widgets_draw(Monitor *m)
 	for (size_t i = 0; i < LENGTH(widgets); ++i)
 	{
 		Widget *w = &widgets[i];
-		if (!w->active)
+		if (!w->_active)
 			continue;
 
 		if (!widget_should_be_drawn_on_monitor(w, m->num))
 			continue;
 
 		widget_lock(w);
-
-		size_t textlen = strlen(w->text ? w->text : "");
-		snprintf(textbuf, TEXTBUF_MAX, "%s%s%s", w->icon ? w->icon : "", w->icon ? " " : "", textlen ? w->text : "---");
+		
+		bool has_text = (bool)w->_text;
+		bool has_icon = (bool)w->icon;
+		snprintf(textbuf, TEXTBUF_MAX, "%s%s%s", has_icon ? w->icon : "", has_icon ? " " : "", has_text ? w->_text : "---");
 		tw += TEXTW(textbuf);
 	}
 
@@ -768,16 +769,16 @@ int widgets_draw(Monitor *m)
 	for (ssize_t i = LENGTH(widgets) - 1; i >= 0; --i)
 	{
 		Widget *w = &widgets[i];
-		if (!w->active)
+		if (!w->_active)
 			continue;
 
 		if (!widget_should_be_drawn_on_monitor(w, m->num))
 			continue;
 
-		size_t textlen = strlen(w->text ? w->text : "");
-		snprintf(textbuf, TEXTBUF_MAX, "%s%s%s", w->icon ? w->icon : "", w->icon ? " " : "", textlen ? w->text : "---");
+		bool has_text = (bool)w->_text;
+		bool has_icon = (bool)w->icon;
+		snprintf(textbuf, TEXTBUF_MAX, "%s%s%s", has_icon ? w->icon : "", has_icon ? " " : "", has_text ? w->_text : "---");
 
-		/* Clean :) */
 		w->_dirty = false;
 		widget_unlock(w);
 
@@ -1558,19 +1559,37 @@ void restack(Monitor *m)
 
 static bool widgets_update_periodic(const struct timeval *now)
 {
-	bool shouldredraw = false;
+	bool redraw = false;
 
 	for (size_t i = 0; i < LENGTH(widgets); ++i)
 	{
 		Widget *w = &widgets[i];
 		if (!w->update)
-			continue;
+			continue; // Not periodically updated
 
+		widget_lock(w);
 		if (widget_update(now, w))
-			shouldredraw = true;
+			redraw = true;
+		widget_unlock(w);
 	}
 
-	return shouldredraw;
+	return redraw;
+}
+
+static bool widgets_any_dirty()
+{
+	for (size_t i = 0; i < LENGTH(widgets); ++i)
+	{
+		Widget *w = &widgets[i];
+		widget_lock(w);
+		const bool dirty = w->_dirty;
+		widget_unlock(w);
+
+		if (dirty)
+			return true;
+	}
+
+	return false;
 }
 
 void run(void)
@@ -1587,7 +1606,7 @@ void run(void)
 		gettimeofday(&tvstart, NULL);
 
 		bool redraw = widgets_update_periodic(&tvstart);
-		if (redraw || scroll_window_name)
+		if (redraw || scroll_window_name || widgets_any_dirty())
 			drawbars(deltatime);
 
 		while (XPending(dpy))

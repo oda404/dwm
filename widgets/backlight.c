@@ -7,31 +7,21 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <dwm/log.h>
 
 static const char *g_backlight_get = "xbacklight -get";
 static const char *g_backlight_raise = "xbacklight -inc 5";
 static const char *g_backlight_lower = "xbacklight -dec 5";
 
-#define WIDGET_ABORT       \
-	{                      \
-		w->active = false; \
-		return 1;          \
-	}
-
 int widget_backlight_init(struct S_Widget *w)
 {
 	/* Try to execute the volume_get_cmd to see if it's valid. If not abort. */
-	if (exec_cmd(g_backlight_get, w->text, 4) != 0)
-		WIDGET_ABORT;
+	char backlight[4];
+	if (exec_cmd(g_backlight_get, backlight, 4) != 0)
+		return -1;
 
-	size_t buflen = strlen(w->text);
-	w->text[buflen] = '%';
-	w->text[buflen + 1] = '\0';
-
-	w->active = true;
-	w->_dirty = true;
 	w->bgcolor = col_purple6;
-
+	widget_snprintf_text(w, "%s%%", backlight);
 	return 0;
 }
 
@@ -62,23 +52,23 @@ void widget_backlight_event(const Arg *arg)
 
 	if (exec_cmd(xbacklight_call, NULL, 0) != 0)
 	{
-		w->active = false;
+		widget_crashed_and_burned(w);
 		return;
 	}
 
 	/* My backlight takes a while to update and be accessible again, so we stall a bit */
-	int tries = 10;
-	while (exec_cmd(g_backlight_get, w->text, 4) != 0 && (tries-- > 0))
+	i8 tries = 10;
+	char backlight[4];
+	while (exec_cmd(g_backlight_get, backlight, 4) != 0 && (tries-- > 0))
 		usleep(10000);
 
 	if (tries == 0)
-		/* might as well assume the last call also failed :( */
-		return;
+	{
+		log_print(LOG_WARN, "backlight: Failed to update backlight level after change!");
+		return; /* might as well assume the last call also failed :( */
+	}
 
-	size_t buflen = strlen(w->text);
-	w->text[buflen] = '%';
-	w->text[buflen + 1] = '\0';
-
+	widget_snprintf_text(w, "%s%%", backlight);
 	w->_dirty = true;
 }
 

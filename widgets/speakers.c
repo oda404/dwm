@@ -9,7 +9,7 @@ static void on_volume_change(u32 volume, void *userdata)
 	Widget *w = (Widget *)userdata;
 
 	widget_lock(w);
-	snprintf(w->text, WIDGET_TEXT_MAXLEN, "%u%%", volume);
+	widget_snprintf_text(w, "%u%%", volume);
 	w->_dirty = true;
 	widget_unlock(w);
 }
@@ -22,7 +22,6 @@ int widget_speakers_init(Widget *w)
 	if (audiocon_on_output_volume_change(on_volume_change, w) != 0)
 		return -1;
 
-	w->active = true;
 	w->bgcolor = col_purple5;
 	return 0;
 }

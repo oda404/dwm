@@ -93,7 +93,6 @@ int widget_cpuload_init(struct S_Widget *w)
         return 1;
     }
 
-    w->active = true;
     w->bgcolor = col_purple5;
     widget_cpuload_update(w);
     return 0;
@@ -161,12 +160,7 @@ bool widget_cpuload_update(struct S_Widget *w)
 
     fclose(f);
 
-    if (strncmp(w->text, out, WIDGET_TEXT_MAXLEN))
-    {
-        strncpy(w->text, out, WIDGET_TEXT_MAXLEN);
-        return true;
-    }
-
+    widget_copy_text(w, out);
     return false;
 }
 

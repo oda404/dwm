@@ -86,9 +86,7 @@ int widget_battery_init(struct S_Widget *w)
 
 #endif // defined(__linux__)
 
-    w->active = true;
     widget_battery_update(w);
-
     return 0;
 }
 
@@ -112,9 +110,9 @@ bool widget_battery_update(struct S_Widget *w)
     fclose(fcapacity);
     fclose(fstatus);
 
-    snprintf(w->text, WIDGET_TEXT_MAXLEN, "%s%s", capacity, battery_status_to_icon(status));
+    widget_snprintf_text(w, "%s%s", capacity, battery_status_to_icon(status));
 
-    unsigned int battery_perc = atoi(w->text);
+    unsigned int battery_perc = atoi(capacity);
     if (battery_perc <= 10)
     {
         w->icon = " ";
@@ -146,7 +144,6 @@ bool widget_battery_update(struct S_Widget *w)
         w->fgcolor = col_purple1;
     }
 
-    w->_dirty = true;
     return true;
 }
 

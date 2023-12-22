@@ -1,3 +1,7 @@
+/**
+ * Copyright Alexandru Olaru
+ * See LICENSE file for copyright and license details
+ */
 
 #ifndef DWM_WIDGET_H
 #define DWM_WIDGET_H
@@ -7,6 +11,9 @@
 #include <threads.h>
 #include <dwm/types.h>
 
+#define WIDGET_TEXT_MAXLEN 128
+
+/* Any members starting with an underscore are for internal use and should not be fucked with by config.h */
 typedef struct S_Widget
 {
 	/* The widget icon, generally an UTF-8 symbol. */
@@ -16,21 +23,23 @@ typedef struct S_Widget
 	const char *bgcolor;
 
 	/* The body of the widget, displayed to the left of the icon, if any. */
-#define WIDGET_TEXT_MAXLEN 72
-	char text[WIDGET_TEXT_MAXLEN];
+	char _text[WIDGET_TEXT_MAXLEN];
 
 	/* True if the widget should be updated and drawn. */
-	bool active;
+	bool _active;
+
+	bool _dirty;
 
 	int (*init)(struct S_Widget *);
 	bool (*update)(struct S_Widget *);
 	void (*destroy)(struct S_Widget *);
 
-	struct timeval update_interval; // Update interval if the widget is to be updated periodically.
-	struct timeval last_update;
+	/* If the widget is to be updated periodically (has an update function), this is the interval */
+	struct timeval update_interval;
+	/* If the widget is to be updated periodically (has an update function(), this is the last time it was updated */
+	struct timeval _last_update;
 
-	bool _dirty;
-
+	/* On which monitors to show this widget eg: "0,1,2". NULL means show on all */
 	const char *show_on_monitors;
 
 	/* These two variables are used for widgets which could/do get updated from another thread.
@@ -52,5 +61,10 @@ bool widget_should_be_drawn_on_monitor(Widget *w, u8 mon_num);
 
 void widget_lock(Widget *w);
 void widget_unlock(Widget *w);
+
+int widget_copy_text(Widget *w, const char *text);
+int widget_snprintf_text(Widget *w, const char *fmt, ...);
+
+void widget_crashed_and_burned(Widget *w);
 
 #endif // !DWM_WIDGET_H

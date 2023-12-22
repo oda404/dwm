@@ -3,6 +3,8 @@
 #include <dwm/util.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdarg.h>
+#include <stdio.h>
 
 void widget_lock(Widget *w)
 {
@@ -22,13 +24,13 @@ void widget_unlock(Widget *w)
 
 int widget_init(Widget *w)
 {
-    int st = -1;
+    int st = 0;
 
     if (w->init)
+    {
         st = w->init(w);
-
-    if (st != 0)
-        w->active = false;
+        w->_active = st == 0;
+    }
 
     return st;
 }
@@ -61,13 +63,34 @@ bool widget_update(const struct timeval *tv, Widget *w)
 {
     bool shouldredraw = false;
     time_t ms_now = timeval_to_ms(tv);
-    time_t ms_nextupdate = timeval_to_ms(&w->last_update) + timeval_to_ms(&w->update_interval);
+    time_t ms_nextupdate = timeval_to_ms(&w->_last_update) + timeval_to_ms(&w->update_interval);
 
     if (ms_now > ms_nextupdate)
     {
         shouldredraw = w->update(w);
-        w->last_update = *tv;
+        w->_last_update = *tv;
     }
 
     return shouldredraw;
+}
+
+int widget_snprintf_text(Widget *w, const char *fmt, ...)
+{
+    va_list vl;
+    va_start(vl, fmt);
+    int rc = vsnprintf(w->_text, WIDGET_TEXT_MAXLEN, fmt, vl);
+    va_end(vl);
+
+    return rc != 0 ? -1 : 0;
+}
+
+int widget_copy_text(Widget *w, const char *text)
+{
+	strncpy(w->_text, text, WIDGET_TEXT_MAXLEN);
+	return 0;
+}
+
+void widget_crashed_and_burned(Widget *w)
+{
+    w->_active = false;
 }
