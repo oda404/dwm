@@ -12,8 +12,8 @@ static const unsigned int snap = 32;	/* snap pixel */
 static const int showbar = 1;			/* 0 means no bar */
 static const int topbar = 1;			/* 0 means bottom bar */
 static const bool scroll_window_name = true;
-static const char *fonts[] = {"Ubuntu Mono Nerd Font:size=15:style=Bold"};
-static const char dmenufont[] = "Ubuntu Mono Nerd Font:size=15:style=Bold";
+static const char *fonts[] = {"Ubuntu Mono Nerd Font:size=12:style=Bold"};
+static const char dmenufont[] = "Ubuntu Mono Nerd Font:size=13:style=Bold";
 
 static const char *colors[][3] = {
 	/*               fg         bg          border   */
@@ -35,13 +35,12 @@ static const Rule rules[] = {
 /* Commands executed when dwm starts */
 static const char *runners[] = {
 	"systemctl start mac",
-	/* Wallpaper */
-	// "feh --bg-scale /home/oda/Downloads/bg.jpeg",
 	/* Tap to click */
 	"xinput set-prop \"ELAN469D:00 04F3:304B Touchpad\" $(xinput list-props \"ELAN469D:00 04F3:304B Touchpad\" | grep \"libinput Tapping Enabled (\" | cut -d ')' -f 1 - | cut -d '(' -f 2 -) 1",
 	/* Window compositor */
-	//"picom -b -e 0  --backend glx --glx-no-stencil --glx-no-rebind-pixmap -f -I 0.05 -O 0.08 --opacity-rule \"90:class_g = 'Alacritty'\" --opacity-rule \"75:class_g = 'dwm'\""
-};
+	"picom -b -e 0  --backend glx --glx-no-stencil --glx-no-rebind-pixmap -f -I 0.1 -O 0.1 --opacity-rule \"75:class_g = 'dmenu'\" --corner-radius 10"};
+
+static const char *wallpaper = "/home/oda/.local/share/wallpapers/viata.png";
 
 /* Bar widgets */
 #include "widgets/time.h"
@@ -50,26 +49,69 @@ static const char *runners[] = {
 #include "widgets/battery.h"
 #include "widgets/network.h"
 #include "widgets/backlight.h"
+#include "widgets/cpuinfo/cpuload.h"
+#include "widgets/mem.h"
 
 #define WIDGET_BATTERY 1
 #define WIDGET_TIME 0
-#define WIDGET_MICROPHONE 3
-#define WIDGET_SPEAKERS 4
-#define WIDGET_NETWORK 2
-#define WIDGET_BACKLIGHT 5
+#define WIDGET_MICROPHONE 5
+#define WIDGET_SPEAKERS 6
+#define WIDGET_NETWORK 4
+#define WIDGET_BACKLIGHT 7
+#define WIDGET_CPULOAD 2
+#define WIDGET_MEM 3
 
 static Widget widgets[] = {
 	[WIDGET_BATTERY] = {
-		.init = widget_battery_init,
-		.update = widget_battery_update,
-		.destroy = widget_battery_destroy,
-		.periodic_update = true,
-		.update_interval = {.tv_sec = 5, .tv_usec = 0}},
-	[WIDGET_BACKLIGHT] = {.icon = "", .init = widget_backlight_init, .update = NULL, .destroy = widget_backlight_destroy, .periodic_update = false},
-	[WIDGET_NETWORK] = {.init = widget_network_init, .update = widget_network_update, .destroy = widget_network_destroy, .periodic_update = true, .update_interval = {.tv_sec = 2, .tv_usec = 0}},
-	[WIDGET_TIME] = {.icon = NULL, .init = widget_time_init, .update = widget_time_update, .destroy = widget_time_destroy, .periodic_update = true, .update_interval = {.tv_sec = 1, .tv_usec = 0}},
-	[WIDGET_MICROPHONE] = {.icon = "", .init = widget_microphone_init, .update = NULL, .destroy = widget_microphone_destroy, .periodic_update = false},
-	[WIDGET_SPEAKERS] = {.icon = " ", .init = widget_speakers_init, .update = NULL, .destroy = widget_speakers_destroy, .periodic_update = false}};
+		.show_on_monitors = "0",
+		.init = widget_battery_init,				   //
+		.update = widget_battery_update,			   //
+		.destroy = widget_battery_destroy,			   //
+		.update_interval = {.tv_sec = 2, .tv_usec = 0} //
+	},
+	[WIDGET_BACKLIGHT] = {
+		.icon = "",
+		.show_on_monitors = "0",			//
+		.init = widget_backlight_init,		//
+		.destroy = widget_backlight_destroy //
+	},
+	[WIDGET_NETWORK] = {
+		.init = widget_network_init,
+		.show_on_monitors = "0",					   //
+		.update = widget_network_update,			   //
+		.destroy = widget_network_destroy,			   //
+		.update_interval = {.tv_sec = 1, .tv_usec = 0} //
+	},
+	[WIDGET_TIME] = {
+		.init = widget_time_init,
+		.update = widget_time_update,				   //
+		.destroy = widget_time_destroy,				   //
+		.update_interval = {.tv_sec = 1, .tv_usec = 0} //
+	},
+	[WIDGET_MICROPHONE] = {
+		.icon = "",
+		.init = widget_microphone_init,		 //
+		.update = NULL,						 //
+		.destroy = widget_microphone_destroy //
+	},
+	[WIDGET_SPEAKERS] = {
+		.icon = " ",
+		.init = widget_speakers_init,	   //
+		.update = NULL,					   //
+		.destroy = widget_speakers_destroy //
+	},
+	[WIDGET_CPULOAD] = {
+		.init = widget_cpuload_init,
+		.update = widget_cpuload_update,					//
+		.destroy = widget_cpuload_destroy,					//
+		.update_interval = {.tv_sec = 0, .tv_usec = 100000} //
+	},														//
+	[WIDGET_MEM] = {
+		.init = widget_mem_init,							//
+		.update = widget_mem_update,						//
+		.destroy = widget_mem_destroy,						//
+		.update_interval = {.tv_sec = 0, .tv_usec = 500000} //
+	}};
 
 /* layout(s) */
 static const float mfact = 0.55;	 /* factor of master area size [0.05..0.95] */
@@ -90,7 +132,12 @@ static const Layout layouts[] = {
 	{MODKEY, KEY, view, {.ui = 1 << TAG}},                         \
 		{MODKEY | ControlMask, KEY, toggleview, {.ui = 1 << TAG}}, \
 		{MODKEY | ShiftMask, KEY, tag, {.ui = 1 << TAG}},          \
-		{MODKEY | ControlMask | ShiftMask, KEY, toggletag, {.ui = 1 << TAG}},
+	{                                                              \
+		MODKEY | ControlMask | ShiftMask, KEY, toggletag,          \
+		{                                                          \
+			.ui = 1 << TAG                                         \
+		}                                                          \
+	}
 
 /* commands */
 static char dmenumon[2] = "0"; /* component of dmenucmd, manipulated in spawn() */
@@ -141,15 +188,16 @@ static Key keys[] = {
 	{MODKEY, XK_period, focusmon, {.i = +1}},
 	{MODKEY | ShiftMask, XK_comma, tagmon, {.i = -1}},
 	{MODKEY | ShiftMask, XK_period, tagmon, {.i = +1}},
-	TAGKEYS(XK_1, 0)
-		TAGKEYS(XK_2, 1)
-			TAGKEYS(XK_3, 2)
-				TAGKEYS(XK_4, 3)
-					TAGKEYS(XK_5, 4)
-						TAGKEYS(XK_6, 5)
-							TAGKEYS(XK_7, 6)
-								TAGKEYS(XK_8, 7)
-									TAGKEYS(XK_9, 8){MODKEY | ShiftMask, XK_q, quit, {0}},
+	TAGKEYS(XK_1, 0),
+	TAGKEYS(XK_2, 1),
+	TAGKEYS(XK_3, 2),
+	TAGKEYS(XK_4, 3),
+	TAGKEYS(XK_5, 4),
+	TAGKEYS(XK_6, 5),
+	TAGKEYS(XK_7, 6),
+	TAGKEYS(XK_8, 7),
+	TAGKEYS(XK_9, 8),
+	{MODKEY | ShiftMask, XK_q, quit, {0}},
 };
 
 /* button definitions */
