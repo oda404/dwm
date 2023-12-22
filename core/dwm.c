@@ -743,7 +743,7 @@ dirtomon(int dir)
 
 int widgets_draw(Monitor *m)
 {
-	int tw = 0;
+	int tw = BAR_X_PADDING * 2;
 #define TEXTBUF_MAX (WIDGET_TEXT_MAXLEN + 12)
 	char textbuf[TEXTBUF_MAX] = {0};
 
@@ -790,7 +790,7 @@ int widgets_draw(Monitor *m)
 			w->bgcolor ? w->bgcolor : colors[SchemeTagNormal][1]);
 
 		drw_setscheme(drw, sch);
-		drw_text(drw, m->ww - ttw, BAR_Y_PADDING, tmp_tw + 32, TEXTW(tags[0]), 12, textbuf, 0);
+		drw_text(drw, m->ww - ttw, 0, tmp_tw + 32, TEXTW(tags[0]), 12, textbuf, 0);
 		ttw -= tmp_tw;
 	}
 
@@ -807,7 +807,7 @@ static int drawbar_tags(Monitor *m)
 			urg |= c->tags;
 	}
 
-	int x = BAR_X_PADDING;
+	int x = 0;
 	size_t w = 0;
 
 	size_t tags_width = 0;
@@ -815,7 +815,7 @@ static int drawbar_tags(Monitor *m)
 		tags_width += TEXTW(tags[i]) + BAR_X_PADDING;
 
 	drw_setscheme(drw, scheme[SchemeTagNormal]);
-	drw_circle_bordered(drw, x, BAR_Y_PADDING, tags_width - BAR_X_PADDING, TEXTW(tags[0]), 1, 0);
+	drw_circle_bordered(drw, x, 0, tags_width, TEXTW(tags[0]), 1, 0);
 
 	// draw tags
 	for (i = 0; i < LENGTH(tags); i++)
@@ -844,22 +844,22 @@ static int drawbar_tags(Monitor *m)
 				}
 			}
 			drw_setscheme(drw, scheme[SchemeSel]);
-			drw_circle_bordered(drw, m->anim_x, BAR_Y_PADDING, w, w, 1, 0);
+			drw_circle_bordered(drw, m->anim_x, 0, w, w, 1, 0);
 		}
 
 		if (urg & 1 << i)
 		{
 			drw_setscheme(drw, scheme[SchemeTagNormal]);
-			drw_circle_bordered(drw, x, BAR_Y_PADDING, w, w, 1, 1);
+			drw_circle_bordered(drw, x, 0, w, w, 1, 1);
 		}
 
 		drw_setscheme(drw, scheme[SchemeNorm]);
-		drw_text_no_bg(drw, x, BAR_Y_PADDING, w, w, lrpad / 2, tags[i], urg & 1 << i);
+		drw_text_no_bg(drw, x, 0, w, w, lrpad / 2, tags[i], urg & 1 << i);
 
 		if (occ & 1 << i)
 		{
 			drw_setscheme(drw, scheme[SchemeTagCircle]);
-			drw_circle(drw, x, BAR_Y_PADDING, w, 0, 1);
+			drw_circle(drw, x, 0, w, 0, 1);
 		}
 
 		x += w + BAR_X_PADDING;
@@ -870,18 +870,18 @@ static int drawbar_tags(Monitor *m)
 	{
 		drw_setscheme(drw, scheme[SchemeTagNormal]);
 		int oldx = x;
-		x = drw_text(drw, x, BAR_Y_PADDING, w, TEXTW(tags[0]), lrpad / 2, m->ltsymbol, 0);
+		x = drw_text(drw, x, 0, w, TEXTW(tags[0]), lrpad / 2, m->ltsymbol, 0);
 		drw_setscheme(drw, scheme[SchemeTagCircle]);
-		drw_circle(drw, oldx, BAR_Y_PADDING, w, 0, 1);
+		drw_circle(drw, oldx, 0, w, 0, 1);
 	}
 	return x;
 }
 
 static int drawbar_tags_dryrun(Monitor *m)
 {
-	int x = BAR_X_PADDING;
+	int x = 0;
 	for (size_t i = 0; i < LENGTH(tags); i++)
-		x += TEXTW(tags[i]) + BAR_X_PADDING;
+		x += TEXTW(tags[i]) + BAR_X_PADDING; 
 
 	x += TEXTW(m->ltsymbol);
 	return x;
@@ -924,10 +924,10 @@ void drawbar(Monitor *m, float deltatime)
 
 			size_t off = (m->ww - tw) - x;
 
-			drw_text_no_bg(drw, x + m->name_scroll - off, BAR_Y_PADDING, TEXTW(m->sel->name), TEXTW(tags[0]), 0, m->sel->name, 0);
+			drw_text_no_bg(drw, x + m->name_scroll - off, 0, TEXTW(m->sel->name), TEXTW(tags[0]), 0, m->sel->name, 0);
 		}
 
-		drw_text_no_bg(drw, x + m->name_scroll, BAR_Y_PADDING, width, TEXTW(tags[0]), 0, m->sel->name, 0);
+		drw_text_no_bg(drw, x + m->name_scroll, 0, width, TEXTW(tags[0]), 0, m->sel->name, 0);
 	}
 	else
 	{
@@ -937,7 +937,7 @@ void drawbar(Monitor *m, float deltatime)
 
 	drawbar_tags(m);
 
-	drw_map(drw, m->barwin, BAR_X_PADDING, BAR_Y_PADDING, m->ww, bh);
+	drw_map(drw, m->barwin, 0, 0, m->ww, bh);
 }
 
 void drawbars(float deltatime)
@@ -1962,7 +1962,7 @@ void togglebar(const Arg *arg)
 {
 	selmon->showbar = !selmon->showbar;
 	updatebarpos(selmon);
-	XMoveResizeWindow(dpy, selmon->barwin, selmon->wx, selmon->by, selmon->ww, bh);
+	XMoveResizeWindow(dpy, selmon->barwin, selmon->wx + BAR_X_PADDING, selmon->by + BAR_Y_PADDING, selmon->ww - BAR_X_PADDING * 2, bh - BAR_Y_PADDING * 2);
 	arrange(selmon);
 }
 
@@ -2070,7 +2070,7 @@ void updatebars(void)
 	{
 		if (m->barwin)
 			continue;
-		m->barwin = XCreateWindow(dpy, root, m->wx, m->by, m->ww, bh, 0, DefaultDepth(dpy, screen),
+		m->barwin = XCreateWindow(dpy, root, m->wx + BAR_X_PADDING, m->by + BAR_Y_PADDING, m->ww - BAR_X_PADDING * 2, bh - BAR_Y_PADDING * 2, 0, DefaultDepth(dpy, screen),
 								  CopyFromParent, DefaultVisual(dpy, screen),
 								  CWOverrideRedirect | CWBackPixmap | CWEventMask, &wa);
 		XDefineCursor(dpy, m->barwin, cursor[CurNormal]->cursor);
