@@ -7,20 +7,23 @@
 #include <stdarg.h>
 #include <sys/time.h>
 #include <dwm/util.h>
+#include <stdatomic.h>
 
 #ifndef VERSION
 #define VERSION "unknown"
 #endif
 
-#define LOG_FAIL           \
-    {                      \
-        fclose(g_logfile); \
-        g_logfile = NULL;  \
-        return -1;         \
+#define LOG_FAIL                          \
+    {                                     \
+        fclose(g_logfile);                \
+        g_logfile = NULL;                 \
+        atomic_flag_clear(&g_print_lock); \
+        return -1;                        \
     }
 
 static FILE *g_logfile;
 static double g_start_ms;
+static atomic_flag g_print_lock = ATOMIC_FLAG_INIT;
 
 int log_init()
 {
@@ -48,6 +51,10 @@ int log_print(u8 lvl, const char *fmt, ...)
     if (!g_logfile)
         return -1;
 
+    /* so the man with 11 fingers doesn't come after us for race conditions */
+    while (atomic_flag_test_and_set(&g_print_lock))
+        ;
+
     struct timeval tv;
     gettimeofday(&tv, NULL);
     double now_ms = timeval_to_ms(&tv);
@@ -70,6 +77,7 @@ int log_print(u8 lvl, const char *fmt, ...)
     if (fflush(g_logfile) < 0)
         LOG_FAIL;
 
+    atomic_flag_clear(&g_print_lock);
     return 0;
 }
 
