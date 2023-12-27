@@ -4,7 +4,7 @@
 include config.mk
 
 SRC = \
-core/drw.c core/dwm.c core/util.c core/log.c core/widget.c core/colors.c widgets/backlight.c widgets/battery.c \
+core/drw.c core/dwm.c core/util.c core/log.c core/widget.c core/colors.c core/screenshot.c widgets/backlight.c widgets/battery.c \
 widgets/microphone.c widgets/network.c widgets/speakers.c widgets/time.c widgets/cpuinfo/cpuload.c \
 widgets/mem.c $(EXTRA_SRC)
 

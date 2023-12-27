@@ -2,6 +2,7 @@
 
 #include <dwm/colors.h>
 #include <dwm/widget.h>
+#include <dwm/screenshot.h>
 
 #define BAR_X_PADDING 4
 #define BAR_Y_PADDING 4
@@ -188,6 +189,7 @@ static Key keys[] = {
 	{MODKEY, XK_period, focusmon, {.i = +1}},
 	{MODKEY | ShiftMask, XK_comma, tagmon, {.i = -1}},
 	{MODKEY | ShiftMask, XK_period, tagmon, {.i = +1}},
+	{MODKEY, XK_s, screenshot_start, {0}},
 	TAGKEYS(XK_1, 0),
 	TAGKEYS(XK_2, 1),
 	TAGKEYS(XK_3, 2),
