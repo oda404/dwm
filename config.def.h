@@ -2,6 +2,7 @@
 
 #include <dwm/colors.h>
 #include <dwm/widget.h>
+#include <dwm/screenshot.h>
 
 #define BAR_X_PADDING 4
 #define BAR_Y_PADDING 4
@@ -13,7 +14,7 @@ static const int showbar = 1;			/* 0 means no bar */
 static const int topbar = 1;			/* 0 means bottom bar */
 static const bool scroll_window_name = true;
 static const char *fonts[] = {"Ubuntu Mono Nerd Font:size=12:style=Bold"};
-static const char dmenufont[] = "Ubuntu Mono Nerd Font:size=13:style=Bold";
+static const char dmenufont[] = "Ubuntu Mono Nerd Font:size=14";
 
 static const char *colors[][3] = {
 	/*               fg         bg          border   */
@@ -34,13 +35,12 @@ static const Rule rules[] = {
 
 /* Commands executed when dwm starts */
 static const char *runners[] = {
-	"systemctl start mac",
+	//"systemctl start mac",
 	/* Tap to click */
-	"xinput set-prop \"ELAN469D:00 04F3:304B Touchpad\" $(xinput list-props \"ELAN469D:00 04F3:304B Touchpad\" | grep \"libinput Tapping Enabled (\" | cut -d ')' -f 1 - | cut -d '(' -f 2 -) 1",
+	//"xinput set-prop \"ELAN469D:00 04F3:304B Touchpad\" $(xinput list-props \"ELAN469D:00 04F3:304B Touchpad\" | grep \"libinput Tapping Enabled (\" | cut -d ')' -f 1 - | cut -d '(' -f 2 -) 1",
 	/* Window compositor */
-	"picom -b -e 0  --backend glx --glx-no-stencil --glx-no-rebind-pixmap -f -I 0.1 -O 0.1 --opacity-rule \"75:class_g = 'dmenu'\" --corner-radius 10"};
-
-static const char *wallpaper = "/home/oda/.local/share/wallpapers/viata.png";
+	//"picom -b -e 0  --backend glx --glx-no-stencil --glx-no-rebind-pixmap -f -I 0.1 -O 0.1 --corner-radius 10"
+};
 
 /* Bar widgets */
 #include "widgets/time.h"
@@ -141,7 +141,7 @@ static const Layout layouts[] = {
 
 /* commands */
 static char dmenumon[2] = "0"; /* component of dmenucmd, manipulated in spawn() */
-static const char *dmenucmd[] = {"dmenu_run", "-b", "-m", dmenumon, "-fn", dmenufont, "-nb", col_black, "-nf", col_gray3, "-sb", col_purple2, "-sf", col_gray4, NULL};
+static const char *dmenucmd[] = {"dmenu_run", "-i", "-m", dmenumon, "-fn", dmenufont, "-nb", col_black, "-nf", col_gray3, "-sb", col_purple2, "-sf", col_gray4, NULL};
 static const char *termcmd[] = {"alacritty", NULL};
 
 static const void *speakers_plus[] = {"+", &widgets[WIDGET_SPEAKERS], NULL};
@@ -188,6 +188,7 @@ static Key keys[] = {
 	{MODKEY, XK_period, focusmon, {.i = +1}},
 	{MODKEY | ShiftMask, XK_comma, tagmon, {.i = -1}},
 	{MODKEY | ShiftMask, XK_period, tagmon, {.i = +1}},
+	{MODKEY, XK_s, screenshot_start, {0}},
 	TAGKEYS(XK_1, 0),
 	TAGKEYS(XK_2, 1),
 	TAGKEYS(XK_3, 2),
