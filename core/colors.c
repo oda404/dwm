@@ -57,7 +57,8 @@ Clr *clrs_get_scheme(Drw *drw, const char *fg, const char *bg)
         tmp = &g_cached_clrs[g_cached_clr_count - 1];
         tmp->fg = fg;
         tmp->bg = bg;
-        tmp->clr = drw_scm_create(drw, &tmp->fg, 2);
+        u32 alphas[] = {0xFFU, 0xFFU};
+        tmp->clr = drw_scm_create(drw, &tmp->fg, alphas, 2);
         hit = tmp->clr;
     }
 
