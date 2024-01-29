@@ -763,7 +763,7 @@ int widgets_draw(Monitor *m)
 			continue;
 
 		widget_lock(w);
-		
+
 		bool has_text = (bool)w->_text;
 		bool has_icon = (bool)w->icon;
 		snprintf(textbuf, TEXTBUF_MAX, "%s%s%s", has_icon ? w->icon : "", has_icon ? " " : "", has_text ? w->_text : "---");

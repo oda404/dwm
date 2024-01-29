@@ -97,7 +97,7 @@ bool widget_mem_update(struct S_Widget *w)
 	if (mem_used_gb >= mem_total_third * 2)
 	{
 		w->bgcolor = col_red;
-		w->fgcolor = col_gray3;
+		w->fgcolor = col_purple1;
 	}
 	else if (mem_used_gb >= mem_total_third * 1 /* duh */)
 	{
