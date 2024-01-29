@@ -821,7 +821,7 @@ static int drawbar_tags(Monitor *m)
 		tags_width += TEXTW(tags[i]) + BAR_X_PADDING;
 
 	drw_setscheme(drw, scheme[SchemeTagNormal]);
-	drw_circle_bordered(drw, x, 0, tags_width, TEXTW(tags[0]), 1, 0);
+	drw_circle_bordered(drw, 0, 0, tags_width - BAR_X_PADDING, TEXTW(tags[0]), 1, 0);
 
 	// draw tags
 	for (i = 0; i < LENGTH(tags); i++)
