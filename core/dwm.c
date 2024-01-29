@@ -887,20 +887,19 @@ static int drawbar_tags_dryrun(Monitor *m)
 {
 	int x = 0;
 	for (size_t i = 0; i < LENGTH(tags); i++)
-		x += TEXTW(tags[i]) + BAR_X_PADDING; 
+		x += TEXTW(tags[i]) + BAR_X_PADDING;
 
 	x += TEXTW(m->ltsymbol);
 	return x;
 }
 
-void drawbar(Monitor *m, float deltatime)
+void drawbar(Monitor *m, float dt)
 {
-	int x, tw = 0;
 	if (!m->showbar)
 		return;
 
-	// clear out the whole bar for the scrolling title
-	// IXME: remove once done
+	int x, tw = 0;
+
 	drw_setscheme(drw, scheme[SchemeNorm]);
 	drw_rect(drw, 0, 0, m->ww, bh, 1, 1);
 
@@ -910,13 +909,16 @@ void drawbar(Monitor *m, float deltatime)
 	// dry run for tags so we can scroll the title properly
 	x = drawbar_tags_dryrun(m);
 
+	// drw_setscheme(drw, scheme[SchemeNorm]);
+	// drw_rect(drw, x, 0, m->ww - x - tw, bh, 1, 1);
+
 	// draw scrolling title
 	if (m->sel)
 	{
 		size_t txtw = TEXTW(m->sel->name);
 		drw_setscheme(drw, scheme[SchemeNorm]);
 
-		m->name_scroll += 1.4;
+		m->name_scroll += 20 * dt;
 		if (x + m->name_scroll >= m->ww - tw)
 			m->name_scroll = 0;
 
@@ -946,12 +948,12 @@ void drawbar(Monitor *m, float deltatime)
 	drw_map(drw, m->barwin, 0, 0, m->ww, bh);
 }
 
-void drawbars(float deltatime)
+void drawbars(float dt)
 {
 	Monitor *m;
 
 	for (m = mons; m; m = m->next)
-		drawbar(m, deltatime);
+		drawbar(m, dt);
 }
 
 void enternotify(XEvent *e)
@@ -1602,8 +1604,9 @@ void run(void)
 {
 	XEvent ev;
 	struct timeval tvstart, tvend;
-	const float update_interval_sec = 1.f / 30.f;
-	float deltatime = 0;
+
+	const float target_min_dt = 1.f / 60.f;
+	float dt = 0;
 
 	/* main event loop */
 	XSync(dpy, False);
@@ -1613,7 +1616,7 @@ void run(void)
 
 		bool redraw = widgets_update_periodic(&tvstart);
 		if (redraw || scroll_window_name || widgets_any_dirty())
-			drawbars(deltatime);
+			drawbars(dt);
 
 		while (XPending(dpy))
 		{
@@ -1627,9 +1630,13 @@ void run(void)
 		// Limit wm framerate
 		const double startsec = timeval_to_sec(&tvstart);
 		const double endsec = timeval_to_sec(&tvend);
-		deltatime = (float)(endsec - startsec);
-		if (deltatime < update_interval_sec)
-			usleep((update_interval_sec - deltatime) * 1000000);
+
+		dt = (float)(endsec - startsec);
+		if (dt < target_min_dt)
+		{
+			usleep((target_min_dt - dt) * 1000000);
+			dt = target_min_dt;
+		}
 	}
 }
 
