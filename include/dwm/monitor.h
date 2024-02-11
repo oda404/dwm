@@ -28,6 +28,7 @@ struct Monitor
     const Layout *lt[2];
     float name_scroll;
 
+    bool bar_tagset_dirty;
     int prev_selected;
     int start_x;
     int end_x;

@@ -1433,6 +1433,8 @@ void propertynotify(XEvent *e)
 		if (ev->atom == XA_WM_NAME || ev->atom == netatom[NetWMName])
 		{
 			updatetitle(c);
+			if (c == c->mon->sel)
+				c->mon->bar_tagset_dirty = true;
 		}
 		if (ev->atom == netatom[NetWMWindowType])
 			updatewindowtype(c);
@@ -1545,6 +1547,8 @@ void restack(Monitor *m)
 	Client *c;
 	XEvent ev;
 	XWindowChanges wc;
+
+	m->bar_tagset_dirty = true;
 
 	if (!m->sel)
 		return;
@@ -1768,6 +1772,8 @@ void setlayout(const Arg *arg)
 	strncpy(selmon->ltsymbol, selmon->lt[selmon->sellt]->symbol, sizeof selmon->ltsymbol);
 	if (selmon->sel)
 		arrange(selmon);
+	else
+		selmon->bar_tagset_dirty = true;
 }
 
 /* arg > 1.0 will set mfact absolutely */
