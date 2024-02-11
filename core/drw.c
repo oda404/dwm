@@ -300,6 +300,8 @@ void drw_circle(Drw *drw, int x, int y, unsigned int rad, int filled, int invert
 	values.line_width = 2;
 	XChangeGC(drw->dpy, drw->gc, GCLineWidth, &values);
 
+	rad -= values.line_width / 2;
+
 	if (filled)
 		XFillArc(drw->dpy, drw->drawable, drw->gc, x, y, rad, rad, 0, 360 * 64);
 	else
