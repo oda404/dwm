@@ -235,6 +235,7 @@ static int xerrordummy(Display *dpy, XErrorEvent *ee);
 static int xerrorstart(Display *dpy, XErrorEvent *ee);
 static void zoom(const Arg *arg);
 static void xinitvisual();
+static void moveresizebar(Monitor *m);
 
 /* variables */
 static const char broken[] = "broken";
@@ -603,7 +604,8 @@ void configurenotify(XEvent *e)
 				for (c = m->clients; c; c = c->next)
 					if (c->isfullscreen)
 						resizeclient(c, m->mx, m->my, m->mw, m->mh);
-				XMoveResizeWindow(dpy, m->barwin, m->wx, m->by, m->ww, bh);
+
+				moveresizebar(m);
 			}
 			focus(NULL);
 			arrange(NULL);
@@ -1980,7 +1982,7 @@ void togglebar(const Arg *arg)
 {
 	selmon->showbar = !selmon->showbar;
 	updatebarpos(selmon);
-	XMoveResizeWindow(dpy, selmon->barwin, selmon->wx + BAR_X_PADDING, selmon->by + BAR_Y_PADDING, selmon->ww - BAR_X_PADDING * 2, bh - BAR_Y_PADDING * 2);
+	moveresizebar(selmon);
 	arrange(selmon);
 }
 
@@ -2109,6 +2111,11 @@ void updatebarpos(Monitor *m)
 	}
 	else
 		m->by = -bh;
+}
+
+void moveresizebar(Monitor *m)
+{
+	XMoveResizeWindow(dpy, m->barwin, m->wx + BAR_X_PADDING, m->by + BAR_Y_PADDING, m->ww - BAR_X_PADDING * 2, bh - BAR_Y_PADDING * 2);
 }
 
 void updateclientlist()
