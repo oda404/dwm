@@ -766,9 +766,8 @@ int widgets_draw(Monitor *m)
 
 		widget_lock(w);
 
-		bool has_text = (bool)w->_text;
 		bool has_icon = (bool)w->icon;
-		snprintf(textbuf, TEXTBUF_MAX, "%s%s%s", has_icon ? w->icon : "", has_icon ? " " : "", has_text ? w->_text : "---");
+		snprintf(textbuf, TEXTBUF_MAX, "%s%s%s", has_icon ? w->icon : "", has_icon ? " " : "", w->_text);
 		tw += TEXTW(textbuf);
 	}
 
@@ -783,9 +782,8 @@ int widgets_draw(Monitor *m)
 		if (!widget_should_be_drawn_on_monitor(w, m->num))
 			continue;
 
-		bool has_text = (bool)w->_text;
 		bool has_icon = (bool)w->icon;
-		snprintf(textbuf, TEXTBUF_MAX, "%s%s%s", has_icon ? w->icon : "", has_icon ? " " : "", has_text ? w->_text : "---");
+		snprintf(textbuf, TEXTBUF_MAX, "%s%s%s", has_icon ? w->icon : "", has_icon ? " " : "", w->_text);
 
 		w->_dirty = false;
 		widget_unlock(w);

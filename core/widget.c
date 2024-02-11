@@ -86,8 +86,8 @@ int widget_snprintf_text(Widget *w, const char *fmt, ...)
 
 int widget_copy_text(Widget *w, const char *text)
 {
-	strncpy(w->_text, text, WIDGET_TEXT_MAXLEN);
-	return 0;
+    strncpy(w->_text, text, WIDGET_TEXT_MAXLEN - 1);
+    return 0;
 }
 
 void widget_crashed_and_burned(Widget *w)
