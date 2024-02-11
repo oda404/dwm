@@ -53,6 +53,7 @@
 #include <dwm/widget.h>
 #include <dwm/layout.h>
 #include <dwm/monitor.h>
+#include <dwm/multimon.h>
 #ifdef USE_AUDIOCON
 #include <dwm/audiocon.h>
 #endif
@@ -1864,6 +1865,9 @@ void setup(void)
 	XSelectInput(dpy, root, wa.event_mask);
 	grabkeys();
 	focus(NULL);
+
+	if (multimon_setup_path)
+		multimon_setup_from_path(multimon_setup_path);
 
 	execute_runners();
 }

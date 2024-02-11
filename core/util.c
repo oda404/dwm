@@ -5,7 +5,8 @@
 #include <string.h>
 #include <ctype.h>
 #include <errno.h>
-
+#include <unistd.h>
+#include <dwm/log.h>
 #include <dwm/util.h>
 
 void *
@@ -59,6 +60,7 @@ int exec_cmd(const char *cmd, char *buf, size_t n)
 		}
 	}
 
+	/* Doesn't work because dwm installs a SIGCHLD >:( */
 	return pclose(fp);
 }
 
@@ -70,4 +72,40 @@ double timeval_to_ms(const struct timeval *tv)
 double timeval_to_sec(const struct timeval *tv)
 {
 	return (double)tv->tv_sec + (double)tv->tv_usec / 1000000.0;
+}
+
+char *path_normalize_alloc(const char *basepath)
+{
+	size_t len = strlen(basepath);
+	if (!len)
+		return calloc(1, 1);
+
+	u8 usernorm = 0;
+	if (len == 1 && basepath[0] == '~')
+		usernorm = 1;
+	else if (len >= 2 && basepath[0] == '~' && basepath[1] == '/')
+		usernorm = 2;
+
+	if (usernorm)
+	{
+		char *uname = getlogin();
+		if (!uname)
+		{
+			log_print(LOG_ERR, "path_to_normalize_alloc: Failed to get user!");
+			return NULL;
+		}
+
+		size_t normpath_len = 7 + strlen(uname) + 1 + strlen(basepath) - usernorm + 1;
+		char *normpath = malloc(normpath_len);
+		if (!normpath)
+		{
+			log_print(LOG_ERR, "path_to_normalize_alloc: Failed to allocate buffer!");
+			return NULL;
+		}
+
+		snprintf(normpath, normpath_len, "/home/%s/%s", uname, basepath + usernorm);
+		return normpath;
+	}
+
+	return strdup(basepath);
 }
