@@ -20,7 +20,6 @@ int widget_backlight_init(struct S_Widget *w)
 	if (exec_cmd(g_backlight_get, backlight, 4) != 0)
 		return -1;
 
-	w->bgcolor = col_purple6;
 	widget_snprintf_text(w, "%s%%", backlight);
 	return 0;
 }

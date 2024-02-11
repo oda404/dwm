@@ -22,7 +22,8 @@ int widget_microphone_init(Widget *w)
 	if (audiocon_on_input_volume_change(on_volume_change, w) != 0)
 		return -1;
 
-	w->bgcolor = col_purple4;
+	w->bgcolor = col_dark_highlight_secondary;
+	w->fgcolor = col_normal_text;
 	return 0;
 }
 

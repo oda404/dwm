@@ -82,7 +82,6 @@ enum
 	SchemeNorm,
 	SchemeSel,
 	SchemeTagNormal,
-	SchemeTagCircle,
 }; /* color schemes */
 enum
 {
@@ -792,8 +791,8 @@ int widgets_draw(Monitor *m)
 
 		Clr *sch = clrs_get_scheme(
 			drw,
-			w->fgcolor ? w->fgcolor : colors[SchemeTagNormal][0],
-			w->bgcolor ? w->bgcolor : colors[SchemeTagNormal][1]);
+			w->fgcolor ? w->fgcolor : colors[SchemeSel][0],
+			w->bgcolor ? w->bgcolor : colors[SchemeSel][1]);
 
 		drw_setscheme(drw, sch);
 		drw_text(drw, m->ww - ttw, 0, tmp_tw + 32, TEXTW(tags[0]), 12, textbuf, 0);
@@ -820,7 +819,7 @@ static int drawbar_tags(Monitor *m)
 	for (i = 0; i < LENGTH(tags); ++i)
 		tags_width += TEXTW(tags[i]) + BAR_X_PADDING;
 
-	drw_setscheme(drw, scheme[SchemeTagNormal]);
+	drw_setscheme(drw, scheme[SchemeSel]);
 	drw_circle_bordered(drw, 0, 0, tags_width - BAR_X_PADDING, TEXTW(tags[0]), 1, 0);
 
 	// draw tags
@@ -849,7 +848,7 @@ static int drawbar_tags(Monitor *m)
 					m->anim_x = m->end_x;
 				}
 			}
-			drw_setscheme(drw, scheme[SchemeSel]);
+			drw_setscheme(drw, scheme[SchemeTagNormal]);
 			drw_circle_bordered(drw, m->anim_x, 0, w, w, 1, 0);
 		}
 
@@ -864,7 +863,7 @@ static int drawbar_tags(Monitor *m)
 
 		if (occ & 1 << i)
 		{
-			drw_setscheme(drw, scheme[SchemeTagCircle]);
+			drw_setscheme(drw, scheme[SchemeTagNormal]);
 			drw_circle(drw, x, 0, w, 0, 1);
 		}
 
@@ -874,10 +873,11 @@ static int drawbar_tags(Monitor *m)
 	// draw ltsymbol
 	w = blw = TEXTW(m->ltsymbol);
 	{
-		drw_setscheme(drw, scheme[SchemeTagNormal]);
+		drw_setscheme(drw, scheme[SchemeSel]);
 		int oldx = x;
 		x = drw_text(drw, x, 0, w, TEXTW(tags[0]), lrpad / 2, m->ltsymbol, 0);
-		drw_setscheme(drw, scheme[SchemeTagCircle]);
+
+		drw_setscheme(drw, scheme[SchemeTagNormal]);
 		drw_circle(drw, oldx, 0, w, 0, 1);
 	}
 	return x;
@@ -1833,9 +1833,8 @@ void setup(void)
 	cursor[CurMove] = drw_cur_create(drw, XC_fleur);
 	/* init appearance */
 	scheme = ecalloc(LENGTH(colors), sizeof(Clr *));
-	u32 alphas[] = {0x0U, 0x0U, 0xFFU};
 	for (i = 0; i < LENGTH(colors); i++)
-		scheme[i] = drw_scm_create(drw, colors[i], alphas, 3);
+		scheme[i] = drw_scm_create(drw, colors[i], 2);
 
 #ifdef USE_AUDIOCON
 	audiocon_init();

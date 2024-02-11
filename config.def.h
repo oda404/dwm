@@ -18,10 +18,9 @@ static const char dmenufont[] = "Ubuntu Mono Nerd Font:size=14";
 
 static const char *colors[][3] = {
 	/*               fg         bg          border   */
-	[SchemeNorm] = {col_gray3, col_black, col_black},
-	[SchemeSel] = {col_gray3, col_purple2, col_black},
-	[SchemeTagNormal] = {col_gray3, col_purple1, col_black},
-	[SchemeTagCircle] = {col_purple3, col_black, col_black},
+	[SchemeNorm] = {col_normal_text, col_tranparent},
+	[SchemeSel] = {col_normal_text, col_dark_bg},
+	[SchemeTagNormal] = {col_dark_highlight_secondary, col_dark_highlight_primary},
 };
 
 /* tagging */

@@ -116,32 +116,32 @@ bool widget_battery_update(struct S_Widget *w)
     if (battery_perc <= 10)
     {
         w->icon = " ";
-        w->bgcolor = col_red;
-        w->fgcolor = col_purple1;
+        w->bgcolor = col_danger;
+        w->fgcolor = col_dark_text;
     }
     else if (battery_perc <= 25)
     {
         w->icon = " ";
-        w->bgcolor = col_red;
-        w->fgcolor = col_purple1;
+        w->bgcolor = col_danger;
+        w->fgcolor = col_dark_text;
     }
     else if (battery_perc <= 50)
     {
         w->icon = " ";
-        w->bgcolor = col_yellow;
-        w->fgcolor = col_purple1;
+        w->bgcolor = col_warn;
+        w->fgcolor = col_dark_text;
     }
     else if (battery_perc <= 75)
     {
         w->icon = " ";
-        w->bgcolor = col_green;
-        w->fgcolor = col_purple1;
+        w->bgcolor = col_ok;
+        w->fgcolor = col_dark_text;
     }
     else
     {
         w->icon = " ";
-        w->bgcolor = col_green;
-        w->fgcolor = col_purple1;
+        w->bgcolor = col_ok;
+        w->fgcolor = col_dark_text;
     }
 
     return true;

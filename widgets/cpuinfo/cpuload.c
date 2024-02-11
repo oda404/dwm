@@ -93,7 +93,7 @@ int widget_cpuload_init(struct S_Widget *w)
         return 1;
     }
 
-    w->bgcolor = col_purple5;
+    w->bgcolor = col_dark_highlight_primary;
     widget_cpuload_update(w);
     return 0;
 }

@@ -22,7 +22,7 @@ int widget_speakers_init(Widget *w)
 	if (audiocon_on_output_volume_change(on_volume_change, w) != 0)
 		return -1;
 
-	w->bgcolor = col_purple5;
+	w->bgcolor = col_dark_highlight_primary;
 	return 0;
 }
 

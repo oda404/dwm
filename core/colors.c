@@ -2,24 +2,19 @@
 #include <dwm/colors.h>
 #include <stdlib.h>
 
-const char col_black[] = "#000000";
-const char col_gray0[] = "#111111";
-const char col_gray1[] = "#222222";
-const char col_gray2[] = "#444444";
-const char col_gray2p5[] = "#888888";
-const char col_gray3[] = "#bbbbbb";
-const char col_gray4[] = "#eeeeee";
-const char col_cyan[] = "#005577";
-const char col_purple[] = "#5F0A87";
-const char col_purple1[] = "#0D1821";
-const char col_purple2[] = "#344966";
-const char col_purple3[] = "#7768AE";
-const char col_purple4[] = "#0B132B";
-const char col_purple5[] = "#1C2541";
-const char col_purple6[] = "#3A506B";
-const char col_green[] = "#3BB273";
-const char col_yellow[] = "#E1BC29";
-const char col_red[] = "#E15554";
+const char col_tranparent[] = "#00000000";
+const char col_normal_text[] = "#FFbbbbbb";
+const char col_dark_text[] = "#FF0D1821";
+
+#define BG_TRANSPARENCY "F0"
+
+const char col_ok[] = "#" BG_TRANSPARENCY "3BB273";
+const char col_warn[] = "#" BG_TRANSPARENCY "FBAF00";
+const char col_danger[] = "#" BG_TRANSPARENCY "D81159";
+
+const char col_dark_bg[] = "#" BG_TRANSPARENCY "0D1821";
+const char col_dark_highlight_primary[] = "#" BG_TRANSPARENCY "222E50";
+const char col_dark_highlight_secondary[] = "#" BG_TRANSPARENCY "4F646F";
 
 typedef struct S_CachedClr
 {
@@ -57,8 +52,7 @@ Clr *clrs_get_scheme(Drw *drw, const char *fg, const char *bg)
         tmp = &g_cached_clrs[g_cached_clr_count - 1];
         tmp->fg = fg;
         tmp->bg = bg;
-        u32 alphas[] = {0xFFU, 0xFFU};
-        tmp->clr = drw_scm_create(drw, &tmp->fg, alphas, 2);
+        tmp->clr = drw_scm_create(drw, &tmp->fg, 2);
         hit = tmp->clr;
     }
 

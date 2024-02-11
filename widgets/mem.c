@@ -96,18 +96,18 @@ bool widget_mem_update(struct S_Widget *w)
 	const float mem_total_third = mem_total_gb / 3;
 	if (mem_used_gb >= mem_total_third * 2)
 	{
-		w->bgcolor = col_red;
-		w->fgcolor = col_purple1;
+		w->bgcolor = col_danger;
+		w->fgcolor = col_normal_text;
 	}
 	else if (mem_used_gb >= mem_total_third * 1 /* duh */)
 	{
-		w->bgcolor = col_yellow;
-		w->fgcolor = col_purple1;
+		w->bgcolor = col_warn;
+		w->fgcolor = col_dark_text;
 	}
 	else
 	{
-		w->bgcolor = col_green;
-		w->fgcolor = col_purple1;
+		w->bgcolor = col_ok;
+		w->fgcolor = col_dark_text;
 	}
 
 	widget_snprintf_text(w, "%.1f/%.1f GiB", mem_used_gb, mem_total_gb);
