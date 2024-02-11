@@ -4,13 +4,16 @@
 include config.mk
 
 SRC = \
-core/drw.c core/dwm.c core/util.c core/log.c core/widget.c core/colors.c core/screenshot.c core/multimon.c core/cleanup.c widgets/backlight.c widgets/battery.c \
-widgets/microphone.c widgets/network.c widgets/speakers.c widgets/time.c widgets/cpuinfo/cpuload.c \
-widgets/mem.c $(EXTRA_SRC)
+core/drw.c core/dwm.c core/util.c core/log.c core/widget.c core/colors.c \
+core/screenshot.c core/multimon.c core/cleanup.c ${WIDGETS_SRC} ${EXTRA_SRC}
 
-OBJ = ${SRC:%.c=$(BUILDDIR)/%.c.o}
+COBJS = ${SRC:%.c=$(BUILDDIR)/%.c.o}
+CDEPS = ${SRC:%.c=$(BUILDDIR)/%.c.d}
+CORE_DEPS = config.h config.mk
 
-all: options $(BUILDDIR)/dwm
+DWM = $(BUILDDIR)/dwm
+
+all: options ${DWM}
 
 options:
 	@echo dwm build options:
@@ -18,38 +21,38 @@ options:
 	@echo "LDFLAGS  = ${LDFLAGS}"
 	@echo "CC       = ${CC}"
 
-$(BUILDDIR)/%.c.o: %.c
-	@mkdir -p $(dir $@)
-	${CC} -c ${CFLAGS} $< -o $@
-
-${OBJ}: config.h config.mk
-
 config.h:
 	cp config.def.h $@
 
-$(BUILDDIR)/dwm: ${OBJ}
-	${CC} -o $@ ${OBJ} ${LDFLAGS}
+${DWM}: ${COBJS}
+	${CC} -o $@ ${COBJS} ${LDFLAGS}
+
+-include ${CDEPS}
+$(BUILDDIR)/%.c.o: %.c ${CORE_DEPS}
+	@mkdir -p $(dir $@)
+	${CC} -c ${CFLAGS} $< -o $@
 
 clean:
-	rm -f $(BUILDDIR)/dwm ${OBJ} dwm-${VERSION}.tar.gz
+	rm -f ${DWM} ${COBJS} ${CDEPS} dwm-${VERSION}.tar.gz
 
 dist: clean
 	mkdir -p dwm-${VERSION}
 	cp -R LICENSE Makefile README config.def.h config.mk\
-		dwm.1 drw.h util.h ${SRC} dwm.png transient.c dwm-${VERSION}
+		dwm.1 drw.h util.h ${SRC} transient.c dwm-${VERSION}
 	tar -cf dwm-${VERSION}.tar dwm-${VERSION}
 	gzip dwm-${VERSION}.tar
 	rm -rf dwm-${VERSION}
 
 install: all
 	mkdir -p ${DESTDIR}${PREFIX}/bin
-	cp -f $(BUILDDIR)/dwm ${DESTDIR}${PREFIX}/bin
+	cp -f ${DWM} ${DESTDIR}${PREFIX}/bin
 	chmod 755 ${DESTDIR}${PREFIX}/bin/dwm
 	mkdir -p ${DESTDIR}${MANPREFIX}/man1
 	sed "s/VERSION/${VERSION}/g" < dwm.1 > ${DESTDIR}${MANPREFIX}/man1/dwm.1
 	chmod 644 ${DESTDIR}${MANPREFIX}/man1/dwm.1
 
 uninstall:
+# Remove log/mmsetup files
 	rm -f ${DESTDIR}${PREFIX}/bin/dwm\
 		${DESTDIR}${MANPREFIX}/man1/dwm.1
 

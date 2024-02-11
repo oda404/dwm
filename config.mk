@@ -53,11 +53,14 @@ ifeq ($(HAVE_AUDIOCON), 1)
 	CPPFLAGS += $(AUDIOCON_FLAGS)
 endif
 
+WIDGETS_SRC = widgets/backlight.c widgets/battery.c widgets/microphone.c widgets/network.c \
+widgets/speakers.c widgets/time.c widgets/cpuinfo/cpuload.c widgets/mem.c 
+
 CFLAGS   = \
 -std=c2x -Wall -Wno-constant-logical-operand \
 -Werror=implicit-function-declaration \
 -Wno-deprecated-declarations -O3 -march=native \
-${INCS} ${CPPFLAGS}
+${INCS} ${CPPFLAGS} -MMD -MP
 
 LDFLAGS  = ${LIBS}
 
