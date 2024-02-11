@@ -53,8 +53,11 @@ ifeq ($(HAVE_AUDIOCON), 1)
 	CPPFLAGS += $(AUDIOCON_FLAGS)
 endif
 
-CFLAGS   = -std=c2x -Wall -Wno-constant-logical-operand -Werror=implicit-function-declaration \
--Wno-deprecated-declarations -O3 -march=native ${INCS} ${CPPFLAGS}
+CFLAGS   = \
+-std=c2x -Wall -Wno-constant-logical-operand \
+-Werror=implicit-function-declaration \
+-Wno-deprecated-declarations -O3 -march=native \
+${INCS} ${CPPFLAGS}
 
 LDFLAGS  = ${LIBS}
 
