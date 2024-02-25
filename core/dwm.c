@@ -235,7 +235,6 @@ static int xerror(Display *dpy, XErrorEvent *ee);
 static int xerrordummy(Display *dpy, XErrorEvent *ee);
 static int xerrorstart(Display *dpy, XErrorEvent *ee);
 static void zoom(const Arg *arg);
-static void xinitvisual();
 static void moveresizebar(Monitor *m);
 
 /* variables */
@@ -269,11 +268,6 @@ static Display *dpy;
 static Drw *drw;
 static Monitor *mons, *selmon;
 static Window root, wmcheckwin;
-
-static int use_argb = 0;
-static Visual *visual;
-static u32 depth;
-static Colormap cmap;
 
 /* configuration, allows nested code to access above variables */
 #include "../config.h"
@@ -939,14 +933,8 @@ void drawbar(Monitor *m, float dt)
 
 		drw_text_no_bg(drw, x + m->name_scroll, 0, width, TEXTW(tags[0]), 0, m->sel->name, 0);
 	}
-	else
-	{
-		// drw_setscheme(drw, scheme[SchemeNorm]);
-		// drw_rect(drw, x, BAR_Y_PADDING, w, bh, 1, 1);
-	}
 
 	drawbar_tags(m);
-
 	drw_map(drw, m->barwin, 0, 0, m->ww, bh);
 }
 
@@ -1813,8 +1801,7 @@ void setup(void)
 	sw = DisplayWidth(dpy, screen);
 	sh = DisplayHeight(dpy, screen);
 	root = RootWindow(dpy, screen);
-	xinitvisual();
-	drw = drw_create(dpy, screen, root, sw, sh, visual, depth, cmap);
+	drw = drw_create(dpy, screen, root, sw, sh);
 	if (!drw_fontset_create(drw, fonts, LENGTH(fonts)))
 		die("no fonts could be loaded.");
 	lrpad = drw->fonts->h;
@@ -2093,14 +2080,27 @@ void updatebars(void)
 		.override_redirect = True,
 		.background_pixel = 0,
 		.border_pixel = 0,
-		.colormap = cmap,
+		.colormap = drw->cmap,
 		.event_mask = ButtonPressMask | ExposureMask};
 	XClassHint ch = {"dwm", "dwm"};
 	for (m = mons; m; m = m->next)
 	{
 		if (m->barwin)
 			continue;
-		m->barwin = XCreateWindow(dpy, root, m->wx + BAR_X_PADDING, m->by + BAR_Y_PADDING, m->ww - BAR_X_PADDING * 2, bh - BAR_Y_PADDING * 2, 0, depth, CopyFromParent, visual, CWOverrideRedirect | CWBackPixel | CWBorderPixel | CWColormap | CWEventMask, &wa);
+		m->barwin = XCreateWindow(
+			dpy,
+			root,
+			m->wx + BAR_X_PADDING,
+			m->by + BAR_Y_PADDING,
+			m->ww - BAR_X_PADDING * 2,
+			bh - BAR_Y_PADDING * 2,
+			0,
+			drw->depth,
+			CopyFromParent,
+			drw->visual,
+			CWOverrideRedirect | CWBackPixel | CWBorderPixel | CWColormap | CWEventMask,
+			&wa //
+		);
 		XDefineCursor(dpy, m->barwin, cursor[CurNormal]->cursor);
 		XMapRaised(dpy, m->barwin);
 		XSetClassHint(dpy, m->barwin, &ch);
@@ -2411,40 +2411,6 @@ void zoom(const Arg *arg)
 		if (!c || !(c = nexttiled(c->next)))
 			return;
 	pop(c);
-}
-
-static void xinitvisual()
-{
-	XVisualInfo tpl = {
-		.screen = screen,
-		.depth = 32,
-		.class = TrueColor};
-	long mask = VisualScreenMask | VisualDepthMask | VisualClassMask;
-
-	int nitems;
-	XVisualInfo *infos = XGetVisualInfo(dpy, mask, &tpl, &nitems);
-	visual = NULL;
-
-	for (size_t i = 0; i < nitems; ++i)
-	{
-		XRenderPictFormat *fmt = XRenderFindVisualFormat(dpy, infos[i].visual);
-		if (fmt->type == PictTypeDirect && fmt->direct.alphaMask)
-		{
-			visual = infos[i].visual;
-			depth = infos[i].depth;
-			cmap = XCreateColormap(dpy, root, visual, AllocNone);
-			use_argb = 1;
-			break;
-		}
-	}
-
-	XFree(infos);
-	if (!visual)
-	{
-		visual = DefaultVisual(dpy, screen);
-		depth = DefaultDepth(dpy, screen);
-		cmap = DefaultColormap(dpy, screen);
-	}
 }
 
 int main(int argc, char *argv[])

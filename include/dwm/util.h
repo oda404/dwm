@@ -11,7 +11,7 @@
 #define MIN(A, B) ((A) < (B) ? (A) : (B))
 #define BETWEEN(X, A, B) ((A) <= (X) && (X) <= (B))
 
-__attribute__((noreturn)) void die(const char *fmt, ...);
+[[noreturn]] void die(const char *fmt, ...);
 void *ecalloc(size_t nmemb, size_t size);
 
 int exec_cmd(const char *cmd, char *buf, size_t n);
