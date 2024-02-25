@@ -5,7 +5,7 @@ include config.mk
 
 SRC = \
 core/drw.c core/dwm.c core/util.c core/log.c core/widget.c core/colors.c \
-core/screenshot.c core/multimon.c core/cleanup.c ${WIDGETS_SRC} ${EXTRA_SRC}
+core/screenshot.c core/multimon.c core/cleanup.c core/wallpaper.c ${WIDGETS_SRC} ${EXTRA_SRC}
 
 COBJS = ${SRC:%.c=$(BUILDDIR)/%.c.o}
 CDEPS = ${SRC:%.c=$(BUILDDIR)/%.c.d}

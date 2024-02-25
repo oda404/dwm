@@ -54,6 +54,7 @@
 #include <dwm/layout.h>
 #include <dwm/monitor.h>
 #include <dwm/multimon.h>
+#include <dwm/wallpaper.h>
 #ifdef USE_AUDIOCON
 #include <dwm/audiocon.h>
 #endif
@@ -1874,6 +1875,9 @@ void setup(void)
 
 	if (multimon_setup_path)
 		multimon_setup_from_path(multimon_setup_path);
+
+	if (wallpaper_path)
+		wallpaper_set_from_path(wallpaper_path);
 
 	execute_runners();
 }
