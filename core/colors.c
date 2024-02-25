@@ -8,13 +8,17 @@ const char col_dark_text[] = "#FF0D1821";
 
 #define BG_TRANSPARENCY "F0"
 
-const char col_ok[] = "#" BG_TRANSPARENCY "3BB273";
+const char col_ok[] = "#" BG_TRANSPARENCY "2CA58D";
+//const char col_ok[] = "#" BG_TRANSPARENCY "3BB273";
 const char col_warn[] = "#" BG_TRANSPARENCY "FBAF00";
+// warn F1A208
 const char col_danger[] = "#" BG_TRANSPARENCY "D81159";
 
 const char col_dark_bg[] = "#" BG_TRANSPARENCY "0D1821";
 const char col_dark_highlight_primary[] = "#" BG_TRANSPARENCY "222E50";
-const char col_dark_highlight_secondary[] = "#" BG_TRANSPARENCY "4F646F";
+//const char col_dark_highlight_secondary[] = "#" BG_TRANSPARENCY "4F646F";
+const char col_dark_highlight_secondary[] = "#" BG_TRANSPARENCY "274690";
+
 
 typedef struct S_CachedClr
 {
