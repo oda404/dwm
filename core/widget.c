@@ -58,10 +58,7 @@ static int widget_copy_text_to_backbuffer(Widget* w, const char* text)
         text);
 
     if (strcmp(tmpbuf, w->_text_backbuffer) == 0)
-    {
-        widget_unlock(w);
         return 0;
-    }
 
     if (strlen(tmpbuf) != strlen(w->_text_backbuffer))
         w->_dirty = WIDGET_DIRTY_LEN_CHANGED;
