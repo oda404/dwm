@@ -1,15 +1,14 @@
 
 #include "battery.h"
 #include <dwm/colors.h>
-#include <string.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-typedef struct
-    S_Battery
+typedef struct S_Battery
 {
-    char *capacity_path;
-    char *status_path;
+    char* capacity_path;
+    char* status_path;
 } Battery;
 
 typedef enum E_BatteryStatus
@@ -19,9 +18,9 @@ typedef enum E_BatteryStatus
     BATTERY_FULL
 } BatteryStatus;
 
-static Battery *g_battery = NULL;
+static Battery* g_battery = NULL;
 
-static char *battery_status_to_icon(const char *status)
+static char* battery_status_to_icon(const char* status)
 {
     if (strncmp(status, "Discharging", 11) == 0)
         return " ";
@@ -31,14 +30,14 @@ static char *battery_status_to_icon(const char *status)
         return "";
 }
 
-int widget_battery_init(struct S_Widget *w)
+int widget_battery_init(struct S_Widget* w)
 {
 #if defined(__linux__)
 
 #define POWER_SUPPLIES_MAX_N 10
 #define POWER_SUPPLY_PATH_LENGTH 64
 
-    char *capacity_path = malloc(POWER_SUPPLY_PATH_LENGTH);
+    char* capacity_path = malloc(POWER_SUPPLY_PATH_LENGTH);
     if (!capacity_path)
         return 1;
 
@@ -50,7 +49,7 @@ int widget_battery_init(struct S_Widget *w)
             "/sys/class/power_supply/BAT%lu/capacity",
             i);
 
-        FILE *file = fopen(capacity_path, "r");
+        FILE* file = fopen(capacity_path, "r");
         if (!file)
             continue;
 
@@ -69,7 +68,8 @@ int widget_battery_init(struct S_Widget *w)
             return 1;
         }
 
-        strncpy(g_battery->capacity_path, capacity_path, POWER_SUPPLY_PATH_LENGTH);
+        strncpy(
+            g_battery->capacity_path, capacity_path, POWER_SUPPLY_PATH_LENGTH);
         snprintf(
             g_battery->status_path,
             POWER_SUPPLY_PATH_LENGTH,
@@ -90,13 +90,13 @@ int widget_battery_init(struct S_Widget *w)
     return 0;
 }
 
-bool widget_battery_update(struct S_Widget *w)
+bool widget_battery_update(struct S_Widget* w)
 {
     if (!g_battery)
         return false;
 
-    FILE *fcapacity = fopen(g_battery->capacity_path, "r");
-    FILE *fstatus = fopen(g_battery->status_path, "r");
+    FILE* fcapacity = fopen(g_battery->capacity_path, "r");
+    FILE* fstatus = fopen(g_battery->status_path, "r");
     if (!fcapacity || !fstatus)
         return false;
 
@@ -117,37 +117,37 @@ bool widget_battery_update(struct S_Widget *w)
     {
         w->icon = " ";
         w->bgcolor = col_danger;
-        w->fgcolor = col_dark_text;
+        w->fgcolor = col_normal_text;
     }
     else if (battery_perc <= 25)
     {
         w->icon = " ";
         w->bgcolor = col_danger;
-        w->fgcolor = col_dark_text;
+        w->fgcolor = col_normal_text;
     }
     else if (battery_perc <= 50)
     {
         w->icon = " ";
         w->bgcolor = col_warn;
-        w->fgcolor = col_dark_text;
+        w->fgcolor = col_normal_text;
     }
     else if (battery_perc <= 75)
     {
         w->icon = " ";
         w->bgcolor = col_ok;
-        w->fgcolor = col_dark_text;
+        w->fgcolor = col_normal_text;
     }
     else
     {
         w->icon = " ";
         w->bgcolor = col_ok;
-        w->fgcolor = col_dark_text;
+        w->fgcolor = col_normal_text;
     }
 
     return true;
 }
 
-void widget_battery_destroy(struct S_Widget *w)
+void widget_battery_destroy(struct S_Widget* w)
 {
     if (g_battery->capacity_path)
         free(g_battery->capacity_path);

@@ -2,8 +2,8 @@
 #ifndef DWM_MONITOR_H
 #define DWM_MONITOR_H
 
-#include <dwm/layout.h>
 #include <dwm/client.h>
+#include <dwm/layout.h>
 
 typedef struct Monitor Monitor;
 struct Monitor
@@ -20,19 +20,28 @@ struct Monitor
     unsigned int tagset[2];
     int showbar;
     int topbar;
-    Client *clients;
-    Client *sel;
-    Client *stack;
-    Monitor *next;
-    Window barwin;
-    const Layout *lt[2];
-    float name_scroll;
+    Client* clients;
+    Client* sel;
+    Client* stack;
+    Monitor* next;
+    const Layout* lt[2];
 
-    bool bar_tagset_dirty;
-    int prev_selected;
+    Window barwin;
+    size_t bar_width;
+    size_t bar_height;
+
+    /* If the tagset/ltsymbol has changed and needs rerendering */
+    bool bar_tags_dirty;
+
+    /* Width of the currently rendered widgets */
+    size_t widgets_width;
+
+    float name_scroll;
+    /* Tagset animation starting x */
     int start_x;
+    /* Tagset animation destination x */
     int end_x;
-    int anim_x;
+    /* Tagset animation interpolation t */
     float t;
 };
 

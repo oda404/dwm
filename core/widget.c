@@ -1,12 +1,12 @@
 
-#include <dwm/widget.h>
 #include <dwm/util.h>
-#include <string.h>
-#include <stdlib.h>
+#include <dwm/widget.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-void widget_lock(Widget *w)
+void widget_lock(Widget* w)
 {
     if (!w->_should_lock_on_access)
         return;
@@ -14,7 +14,7 @@ void widget_lock(Widget *w)
     mtx_lock(&w->_lock);
 }
 
-void widget_unlock(Widget *w)
+void widget_unlock(Widget* w)
 {
     if (!w->_should_lock_on_access)
         return;
@@ -22,7 +22,7 @@ void widget_unlock(Widget *w)
     mtx_unlock(&w->_lock);
 }
 
-int widget_init(Widget *w)
+int widget_init(Widget* w)
 {
     int st = 0;
 
@@ -35,7 +35,7 @@ int widget_init(Widget *w)
     return st;
 }
 
-int widget_init_locking(Widget *w)
+int widget_init_locking(Widget* w)
 {
     w->_should_lock_on_access = true;
     if (mtx_init(&w->_lock, mtx_plain | mtx_recursive) == thrd_error)
@@ -44,12 +44,12 @@ int widget_init_locking(Widget *w)
     return 0;
 }
 
-void widget_destroy_locking(Widget *w)
+void widget_destroy_locking(Widget* w)
 {
     mtx_destroy(&w->_lock);
 }
 
-bool widget_should_be_drawn_on_monitor(Widget *w, u8 mon_num)
+bool widget_should_be_drawn_on_monitor(Widget* w, u8 mon_num)
 {
     if (!w->show_on_monitors)
         return true;
@@ -59,11 +59,12 @@ bool widget_should_be_drawn_on_monitor(Widget *w, u8 mon_num)
     return n == mon_num;
 }
 
-bool widget_update(const struct timeval *tv, Widget *w)
+bool widget_update(const struct timeval* tv, Widget* w)
 {
     bool shouldredraw = false;
     time_t ms_now = timeval_to_ms(tv);
-    time_t ms_nextupdate = timeval_to_ms(&w->_last_update) + timeval_to_ms(&w->update_interval);
+    time_t ms_nextupdate =
+        timeval_to_ms(&w->_last_update) + timeval_to_ms(&w->update_interval);
 
     if (ms_now > ms_nextupdate)
     {
@@ -74,23 +75,53 @@ bool widget_update(const struct timeval *tv, Widget *w)
     return shouldredraw;
 }
 
-int widget_snprintf_text(Widget *w, const char *fmt, ...)
+int widget_snprintf_text(Widget* w, const char* fmt, ...)
 {
     va_list vl;
     va_start(vl, fmt);
-    int rc = vsnprintf(w->_text, WIDGET_TEXT_MAXLEN, fmt, vl);
+    int rc = vsnprintf(w->_text_backbuffer, WIDGET_TEXT_MAXLEN, fmt, vl);
     va_end(vl);
 
     return rc != 0 ? -1 : 0;
 }
 
-int widget_copy_text(Widget *w, const char *text)
+int widget_copy_text(Widget* w, const char* text)
 {
-    strncpy(w->_text, text, WIDGET_TEXT_MAXLEN - 1);
+    strncpy(w->_text_backbuffer, text, WIDGET_TEXT_MAXLEN - 1);
     return 0;
 }
 
-void widget_crashed_and_burned(Widget *w)
+void widget_crashed_and_burned(Widget* w)
 {
     w->_active = false;
+}
+
+int widget_render_to_frontbuffer(Widget* w)
+{
+    char tmpbuf[WIDGET_TEXT_MAXLEN];
+
+    widget_lock(w);
+    snprintf(
+        tmpbuf,
+        WIDGET_TEXT_MAXLEN,
+        "%s%s%s",
+        w->icon ? w->icon : "",
+        w->icon ? " " : "",
+        w->_text_backbuffer);
+    widget_unlock(w);
+
+    w->_dirty = false;
+
+    if (strcmp(tmpbuf, w->_text_frontbuffer) == 0)
+        return WIDGET_RENDER_UNCHANGED;
+
+    int ret;
+    /* FIXME: maybe compare text widths? */
+    if (strlen(tmpbuf) != strlen(w->_text_frontbuffer))
+        ret = WIDGET_RENDER_CHANGED_LENGTH;
+    else
+        ret = WIDGET_RENDER_CHANGED;
+
+    strcpy(w->_text_frontbuffer, tmpbuf);
+    return ret;
 }
