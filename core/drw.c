@@ -322,7 +322,8 @@ void drw_rect(Drw *drw, int x, int y, unsigned int w, unsigned int h, int filled
 
 void drw_circle_bordered(Drw *drw, int x, int y, unsigned int w, unsigned int h, int filled, int invert)
 {
-	XSetForeground(drw->dpy, drw->gc, drw->scheme[invert ? ColFg : ColBg].pixel);
+	XSetForeground(drw->dpy, drw->gc, drw->scheme[invert ? ColBg : ColFg].pixel);
+
 	XFillRectangle(drw->dpy, drw->drawable, drw->gc, x + h / 2, y, w - h, h);
 
 	XFillArc(drw->dpy, drw->drawable, drw->gc, x, y, h, h, 360, 360 * 64);
@@ -331,7 +332,7 @@ void drw_circle_bordered(Drw *drw, int x, int y, unsigned int w, unsigned int h,
 
 void drw_circle(Drw *drw, int x, int y, unsigned int rad, int filled, int invert)
 {
-	XSetForeground(drw->dpy, drw->gc, drw->scheme[invert ? ColFg : ColBg].pixel);
+	XSetForeground(drw->dpy, drw->gc, drw->scheme[invert ? ColBg : ColFg].pixel);
 
 	XGCValues values;
 	values.line_width = 2;
@@ -383,7 +384,7 @@ int drw_text(Drw *drw, int x, int y, unsigned int w, unsigned int h, unsigned in
 	}
 	else
 	{
-		drw_circle_bordered(drw, x, y, w, h, 1, invert);
+		drw_circle_bordered(drw, x, y, w, h, 1, !invert);
 		d = XftDrawCreate(drw->dpy, drw->drawable, drw->visual, drw->cmap);
 		x += lpad;
 		w -= lpad;
