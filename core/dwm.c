@@ -250,9 +250,10 @@ static void moveresizebar(Monitor* m);
 static const char broken[] = "broken";
 static char stext[256];
 static int screen;
-static int sw, sh;      /* X display screen geometry width, height */
-static int bh, blw = 0; /* bar geometry */
-static int lrpad;       /* sum of left and right padding for text */
+static int sw, sh; /* X display screen geometry width, height */
+static int bh;     /* bar geometry */
+static size_t g_tags_ltsymbol_width = 0;
+static int lrpad; /* sum of left and right padding for text */
 static int (*xerrorxlib)(Display*, XErrorEvent*);
 static unsigned int numlockmask = 0;
 static void (*handler[LASTEvent])(XEvent*) = {
@@ -464,7 +465,7 @@ void buttonpress(XEvent* e)
             click = ClkTagBar;
             arg.ui = 1 << i;
         }
-        else if (ev->x < x + blw)
+        else if (ev->x < x + g_tags_ltsymbol_width)
             click = ClkLtSymbol;
         else if (ev->x > selmon->ww - (int)TEXTW(stext))
             click = ClkStatusText;
@@ -773,33 +774,24 @@ int widgets_draw(Monitor* m)
     for (size_t i = 0; i < LENGTH(widgets); ++i)
     {
         Widget* w = &widgets[i];
-        if (!w->_active)
+        if (!widget_active(w))
             continue;
 
         if (!widget_should_be_drawn_on_monitor(w, m->num))
             continue;
 
-        int st = widget_render_to_frontbuffer(w);
-        if (st < 0)
-        {
-            widget_crashed_and_burned(w);
-            log_print(
-                LOG_ERR, "widget: Failed to render to frontbuffer (%zu)", i);
-            continue;
-        }
+        char widget_buf[WIDGET_TEXT_MAXLEN];
+        WidgetDirtyType st = widget_copy_backbuffer(w, widget_buf);
 
-        const size_t tmp_tw = TEXTW(w->_text_frontbuffer);
+        // FIXME: cache this width
+        const size_t tmp_tw = TEXTW(widget_buf);
         widgets_width += tmp_tw;
         tw -= tmp_tw;
 
         /* Nothing changed, doesn't need to be rerendered */
-        if (st == WIDGET_RENDER_UNCHANGED && !rerender_cascade)
+        if (st == WIDGET_DIRTY_CLEAN && !rerender_cascade)
             continue;
-
-        /* If the widget changed it's length, all following widgets will get
-         * redrawn regardless of wheter they changed or not, because if we don't
-         * we'll get artifacts */
-        if (st == WIDGET_RENDER_CHANGED_LENGTH)
+        else if (st == WIDGET_DIRTY_LEN_CHANGED)
             rerender_cascade = true;
 
         Clr* sch = clrs_get_scheme(
@@ -812,14 +804,7 @@ int widgets_draw(Monitor* m)
 
         drw_setscheme(drw, sch);
         drw_text_no_bg(
-            drw,
-            tw,
-            0,
-            tmp_tw,
-            m->bar_height,
-            lrpad / 2,
-            w->_text_frontbuffer,
-            0);
+            drw, tw, 0, tmp_tw, m->bar_height, lrpad / 2, widget_buf, 0);
         drw_rect(drw, tw, 0, tmp_tw, BAR_Y_PADDING / 2, 1, 1);
     }
 
@@ -848,7 +833,8 @@ static int drawbar_tags(float dt, Monitor* m)
     size_t x = 0;
 
     drw_setscheme(drw, scheme[SchemeNorm]);
-    drw_rect(drw, 0, 0, g_tags_width + TEXTW(m->ltsymbol), m->bar_height, 1, 1);
+    drw_rect(
+        drw, 0, 0, g_tags_width + g_tags_ltsymbol_width, m->bar_height, 1, 1);
 
     const size_t seltag_count = __builtin_popcount(m->tagset[m->seltags]);
 
@@ -904,14 +890,60 @@ static int drawbar_tags(float dt, Monitor* m)
     }
 
     // draw ltsymbol
-    size_t w = blw = TEXTW(m->ltsymbol);
+    size_t w = g_tags_ltsymbol_width = TEXTW(m->ltsymbol);
     drw_setscheme(drw, scheme[SchemeTagNormal]);
     drw_rect(drw, x, 0, w, BAR_Y_PADDING / 2, 1, 0);
-
     drw_setscheme(drw, scheme[SchemeSel]);
-    x = drw_text_no_bg(drw, x, 0, w, m->bar_height, lrpad / 2, m->ltsymbol, 0);
+    drw_text_no_bg(drw, x, 0, w, m->bar_height, lrpad / 2, m->ltsymbol, 0);
+    x += w;
 
+    m->bar_tags_dirty = false;
     return x;
+}
+
+static void drawbar_title(Monitor* m, ssize_t x, size_t max_width)
+{
+    if (!g_scroll_title && m->sel->name_dirty)
+    {
+        drw_setscheme(drw, scheme[SchemeNorm]);
+        drw_rect(drw, x, 0, max_width, m->bar_height, 1, 1);
+        drw_text_no_bg(
+            drw, x, 0, max_width, m->bar_height, lrpad / 2, m->sel->name, 0);
+
+        m->sel->name_dirty = false;
+        return;
+    }
+
+    // size_t txtw = TEXTW(m->sel->name);
+
+    // m->name_scroll += 20 * dt;
+    // if (x + m->name_scroll >= m->ww - tw)
+    //     m->name_scroll = 0;
+
+    // int width = txtw;
+    // if (x + m->name_scroll + txtw >= m->ww - tw)
+    // {
+    //     size_t pixels_chopped = (x + m->name_scroll + txtw) - (m->ww - tw);
+    //     width -= pixels_chopped;
+    //     if (width < 0)
+    //         width = 0;
+
+    //     size_t off = (m->ww - tw) - x;
+
+    //     drw_text_no_bg(
+    //         drw,
+    //         x + m->name_scroll - off,
+    //         0,
+    //         TEXTW(m->sel->name),
+    //         TEXTW(tags[0]),
+    //         0,
+    //         m->sel->name,
+    //         0);
+    // }
+
+    // drw_text_no_bg(
+    //     drw, x + m->name_scroll, 0, width, TEXTW(tags[0]), 0, m->sel->name,
+    //     0);
 }
 
 void drawbar(Monitor* m, float dt)
@@ -919,52 +951,26 @@ void drawbar(Monitor* m, float dt)
     if (!m->showbar)
         return;
 
-    size_t x = g_tags_width + TEXTW(m->ltsymbol);
-    size_t tw = 0;
-
-    /* draw widgets */
-    tw = widgets_draw(m);
-
-    // draw scrolling title
-    // if (m->sel)
-    // {
-    // 	size_t txtw = TEXTW(m->sel->name);
-
-    // 	m->name_scroll += 20 * dt;
-    // 	if (x + m->name_scroll >= m->ww - tw)
-    // 		m->name_scroll = 0;
-
-    // 	int width = txtw;
-    // 	if (x + m->name_scroll + txtw >= m->ww - tw)
-    // 	{
-    // 		size_t pixels_chopped = (x + m->name_scroll + txtw) - (m->ww -
-    // tw); 		width -= pixels_chopped; 		if (width < 0)
-    // width = 0;
-
-    // 		size_t off = (m->ww - tw) - x;
-
-    // 		drw_text_no_bg(drw, x + m->name_scroll - off, 0,
-    // TEXTW(m->sel->name), TEXTW(tags[0]), 0, m->sel->name, 0);
-    // 	}
-
-    // 	drw_text_no_bg(drw, x + m->name_scroll, 0, width, TEXTW(tags[0]), 0,
-    // m->sel->name, 0);
-    // }
-
     if (m->bar_tags_dirty || m->t < 1)
-    {
         drawbar_tags(dt, m);
-        m->bar_tags_dirty = false;
+
+    if (widgets_any_dirty(widgets, LENGTH(widgets)))
+        widgets_draw(m);
+
+    if (m->sel)
+    {
+        const size_t title_x = g_tags_width + g_tags_ltsymbol_width;
+        const size_t title_max_width = m->widgets_width - title_x;
+        drawbar_title(m, title_x, title_max_width);
     }
 
+    // FIXME: map more smartly
     drw_map(drw, m->barwin, 0, 0, m->ww, bh);
 }
 
 void drawbars(float dt)
 {
-    Monitor* m;
-
-    for (m = mons; m; m = m->next)
+    for (Monitor* m = mons; m; m = m->next)
         drawbar(m, dt);
 }
 
@@ -1002,6 +1008,7 @@ void focus(Client* c)
             selmon = c->mon;
         if (c->isurgent)
             seturgent(c, 0);
+        c->name_dirty = true;
         detachstack(c);
         attachstack(c);
         grabbuttons(c, 1);
@@ -1677,41 +1684,6 @@ void restack(Monitor* m)
         ;
 }
 
-static bool widgets_update_periodic(const struct timeval* now)
-{
-    bool redraw = false;
-
-    for (size_t i = 0; i < LENGTH(widgets); ++i)
-    {
-        Widget* w = &widgets[i];
-        if (!w->update)
-            continue; // Not periodically updated
-
-        widget_lock(w);
-        if (widget_update(now, w))
-            redraw = true;
-        widget_unlock(w);
-    }
-
-    return redraw;
-}
-
-static bool widgets_any_dirty()
-{
-    for (size_t i = 0; i < LENGTH(widgets); ++i)
-    {
-        Widget* w = &widgets[i];
-        widget_lock(w);
-        const bool dirty = w->_dirty;
-        widget_unlock(w);
-
-        if (dirty)
-            return true;
-    }
-
-    return false;
-}
-
 void run(void)
 {
     XEvent ev;
@@ -1726,9 +1698,8 @@ void run(void)
     {
         gettimeofday(&tvstart, NULL);
 
-        bool redraw = widgets_update_periodic(&tvstart);
-        if (redraw || scroll_window_name || widgets_any_dirty())
-            drawbars(dt);
+        widgets_update_periodic(widgets, LENGTH(widgets), &tvstart);
+        drawbars(dt);
 
         while (XPending(dpy))
         {
@@ -2535,8 +2506,11 @@ void updatetitle(Client* c)
 {
     if (!gettextprop(c->win, netatom[NetWMName], c->name, sizeof c->name))
         gettextprop(c->win, XA_WM_NAME, c->name, sizeof c->name);
+
     if (c->name[0] == '\0') /* hack to mark broken clients */
         strcpy(c->name, broken);
+
+    c->name_dirty = true;
 }
 
 void updatewindowtype(Client* c)

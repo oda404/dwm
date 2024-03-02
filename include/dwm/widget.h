@@ -13,6 +13,13 @@
 
 #define WIDGET_TEXT_MAXLEN 128
 
+typedef enum
+{
+    WIDGET_DIRTY_CLEAN,
+    WIDGET_DIRTY_TEXT_CHANGED,
+    WIDGET_DIRTY_LEN_CHANGED,
+} WidgetDirtyType;
+
 /* Any members starting with an underscore are for internal use and should not
  * be fucked with by config.h */
 typedef struct S_Widget
@@ -24,17 +31,15 @@ typedef struct S_Widget
     const char* bgcolor;
 
     /* The body of the widget, displayed to the left of the icon, if any. */
-    char _text_frontbuffer[WIDGET_TEXT_MAXLEN];
-
     char _text_backbuffer[WIDGET_TEXT_MAXLEN];
 
     /* True if the widget should be updated and drawn. */
     bool _active;
 
-    bool _dirty;
+    WidgetDirtyType _dirty;
 
     int (*init)(struct S_Widget*);
-    bool (*update)(struct S_Widget*);
+    int (*update)(struct S_Widget*);
     void (*destroy)(struct S_Widget*);
 
     /* If the widget is to be updated periodically (has an update function),
@@ -57,29 +62,23 @@ typedef struct S_Widget
     bool _should_lock_on_access;
 } Widget;
 
-typedef enum
-{
-    WIDGET_RENDER_UNCHANGED,
-    WIDGET_RENDER_CHANGED,
-    WIDGET_RENDER_CHANGED_LENGTH,
-} WidgetRenderResult;
-
 int widget_init(Widget* w);
-bool widget_update(const struct timeval* now, Widget* w);
+
+bool widget_active(Widget* w);
 
 int widget_init_locking(Widget* w);
 void widget_destroy_locking(Widget* w);
 
 bool widget_should_be_drawn_on_monitor(Widget* w, u8 mon_num);
 
-void widget_lock(Widget* w);
-void widget_unlock(Widget* w);
-
 int widget_copy_text(Widget* w, const char* text);
 int widget_snprintf_text(Widget* w, const char* fmt, ...);
 
-void widget_crashed_and_burned(Widget* w);
+void widgets_update_periodic(
+    Widget* widgets, size_t widget_count, const struct timeval* now);
 
-int widget_render_to_frontbuffer(Widget* w);
+bool widgets_any_dirty(Widget* widgets, size_t widget_count);
+
+WidgetDirtyType widget_copy_backbuffer(Widget* w, char* outbuf);
 
 #endif // !DWM_WIDGET_H

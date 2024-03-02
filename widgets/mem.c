@@ -14,14 +14,11 @@ int widget_mem_init(struct S_Widget* w)
     return 0;
 }
 
-bool widget_mem_update(struct S_Widget* w)
+int widget_mem_update(struct S_Widget* w)
 {
     FILE* f = fopen("/proc/meminfo", "r");
     if (!f)
-    {
-        widget_crashed_and_burned(w);
-        return false;
-    }
+        return -1;
 
     char buf[128];
     size_t entries_read = 0;
@@ -39,8 +36,7 @@ bool widget_mem_update(struct S_Widget* w)
         if (!rc)
         {
             fclose(f);
-            widget_crashed_and_burned(w);
-            return false;
+            return -1;
         }
 
         int st;
@@ -83,8 +79,7 @@ bool widget_mem_update(struct S_Widget* w)
         if (st != 1)
         {
             fclose(f);
-            widget_crashed_and_burned(w);
-            return false;
+            return -1;
         }
     }
 
@@ -113,7 +108,7 @@ bool widget_mem_update(struct S_Widget* w)
     }
 
     widget_snprintf_text(w, "%.1f/%.1f GiB", mem_used_gb, mem_total_gb);
-    return true;
+    return 0;
 }
 
 void widget_mem_destroy(struct S_Widget* w) {}

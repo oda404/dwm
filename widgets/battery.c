@@ -39,7 +39,7 @@ int widget_battery_init(struct S_Widget* w)
 
     char* capacity_path = malloc(POWER_SUPPLY_PATH_LENGTH);
     if (!capacity_path)
-        return 1;
+        return -1;
 
     for (size_t i = 0; i < POWER_SUPPLIES_MAX_N; ++i)
     {
@@ -57,7 +57,9 @@ int widget_battery_init(struct S_Widget* w)
 
         g_battery = malloc(sizeof(Battery));
         if (!g_battery)
-            return 1;
+        {
+            return -1;
+        }
 
         g_battery->capacity_path = malloc(POWER_SUPPLY_PATH_LENGTH);
         g_battery->status_path = malloc(POWER_SUPPLY_PATH_LENGTH);
@@ -65,7 +67,7 @@ int widget_battery_init(struct S_Widget* w)
         if (!(g_battery->capacity_path && g_battery->status_path))
         {
             free(g_battery);
-            return 1;
+            return -1;
         }
 
         strncpy(
@@ -80,7 +82,6 @@ int widget_battery_init(struct S_Widget* w)
     }
 
     free(capacity_path);
-
     if (!g_battery)
         return 1;
 
@@ -90,15 +91,21 @@ int widget_battery_init(struct S_Widget* w)
     return 0;
 }
 
-bool widget_battery_update(struct S_Widget* w)
+int widget_battery_update(struct S_Widget* w)
 {
     if (!g_battery)
-        return false;
+        return -1;
 
     FILE* fcapacity = fopen(g_battery->capacity_path, "r");
+    if (!fcapacity)
+        return -1;
+
     FILE* fstatus = fopen(g_battery->status_path, "r");
-    if (!fcapacity || !fstatus)
-        return false;
+    if (!fstatus)
+    {
+        fclose(fcapacity);
+        return -1;
+    }
 
     char capacity[5];
     fgets(capacity, 5, fcapacity);
@@ -144,7 +151,7 @@ bool widget_battery_update(struct S_Widget* w)
         w->fgcolor = col_normal_text;
     }
 
-    return true;
+    return 0;
 }
 
 void widget_battery_destroy(struct S_Widget* w)
