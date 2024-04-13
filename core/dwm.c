@@ -228,7 +228,7 @@ static void toggletag(const Arg* arg);
 static void toggleview(const Arg* arg);
 static void unfocus(Client* c, int setfocus);
 static void unmanage(Client* c, int destroyed);
-static void unmanage_unmanaged(ClientUnmanaged* c);
+static void unregister_unmanaged_client(ClientUnmanaged* c);
 static void unmapnotify(XEvent* e);
 static void updatebarpos(Monitor* m);
 static void updatebars(void);
@@ -515,7 +515,7 @@ void cleanup(void)
             unmanage(m->stack, 0);
 
     while (clients_unmanaged)
-        unmanage_unmanaged(clients_unmanaged);
+        unregister_unmanaged_client(clients_unmanaged);
 
     XUngrabKey(dpy, AnyKey, AnyModifier, root);
     while (mons)
@@ -1288,7 +1288,13 @@ void killclient(const Arg* arg)
     }
 }
 
-void manage_unmanaged(Window w, XWindowAttributes* wa)
+void raise_unmanaged_clients()
+{
+    for (ClientUnmanaged* cun = clients_unmanaged; cun; cun = cun->next)
+        XRaiseWindow(dpy, cun->win);
+}
+
+void register_unmanaged_client(Window w, XWindowAttributes* wa)
 {
     ClientUnmanaged* c = ecalloc(1, sizeof(ClientUnmanaged));
     c->win = w;
@@ -1298,7 +1304,7 @@ void manage_unmanaged(Window w, XWindowAttributes* wa)
     XRaiseWindow(dpy, w);
 }
 
-void unmanage_unmanaged(ClientUnmanaged* c)
+void unregister_unmanaged_client(ClientUnmanaged* c)
 {
     ClientUnmanaged** tmpc;
     for (tmpc = &clients_unmanaged; *tmpc != c && *tmpc; tmpc = &(*tmpc)->next)
@@ -1308,7 +1314,7 @@ void unmanage_unmanaged(ClientUnmanaged* c)
     {
         log_print(
             LOG_ERR,
-            "Tried to unmanage an unmanaged client but couldn't find it in the client tree!");
+            "Tried to unregister an unmanaged client but couldn't find it in the client list!");
         return;
     }
 
@@ -1434,7 +1440,7 @@ void maprequest(XEvent* e)
 
     if (wa.override_redirect && !win_to_unmanaged_client(ev->window))
     {
-        manage_unmanaged(ev->window, &wa);
+        register_unmanaged_client(ev->window, &wa);
         return;
     }
 
@@ -1735,8 +1741,7 @@ void restack(Monitor* m)
             }
     }
 
-    for (ClientUnmanaged* cun = clients_unmanaged; cun; cun = cun->next)
-        XRaiseWindow(dpy, cun->win);
+    raise_unmanaged_clients();
 
     XSync(dpy, False);
     while (XCheckMaskEvent(dpy, EnterWindowMask, &ev))
@@ -1906,6 +1911,7 @@ void setfullscreen(Client* c, int fullscreen)
         c->isfloating = 1;
         resizeclient(c, c->mon->mx, c->mon->my, c->mon->mw, c->mon->mh);
         XRaiseWindow(dpy, c->win);
+        raise_unmanaged_clients();
     }
     else if (!fullscreen && c->isfullscreen)
     {
@@ -2318,11 +2324,9 @@ void unmapnotify(XEvent* e)
             unmanage(c, 0);
     }
 
-    ClientUnmanaged* unc;
-    if ((unc = win_to_unmanaged_client(ev->window)))
-    {
-        unmanage_unmanaged(unc);
-    }
+    ClientUnmanaged* unc = win_to_unmanaged_client(ev->window);
+    if (unc)
+        unregister_unmanaged_client(unc);
 }
 
 void updatebars(void)
