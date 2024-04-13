@@ -56,6 +56,10 @@ endif
 WIDGETS_SRC = widgets/backlight.c widgets/battery.c widgets/microphone.c widgets/network.c \
 widgets/speakers.c widgets/time.c widgets/cpuinfo/cpuload.c widgets/mem.c 
 
+EXTENSIONS_SRC = 
+
+include extensions/xnightlight/sub.mk
+
 LTILS_SRC = ltils/src/proc/proc.c ltils/src/string/numeric.c ltils/src/cleanup.c
 
 CFLAGS   = \
