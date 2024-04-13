@@ -33,7 +33,7 @@ PULSE_LIBS = -lpulse
 PULSE_FLAGS = -DUSE_PULSE
 
 # includes and libs
-INCS = -I${X11INC} -I${FREETYPEINC}
+INCS = -I${X11INC} -I${FREETYPEINC} -Iltils/include
 LIBS = -L${X11LIB} -lX11 ${XINERAMALIBS} ${FREETYPELIBS} -lXrender -lm
 
 # flags
@@ -55,6 +55,8 @@ endif
 
 WIDGETS_SRC = widgets/backlight.c widgets/battery.c widgets/microphone.c widgets/network.c \
 widgets/speakers.c widgets/time.c widgets/cpuinfo/cpuload.c widgets/mem.c 
+
+LTILS_SRC = ltils/src/proc/proc.c ltils/src/string/numeric.c ltils/src/cleanup.c
 
 CFLAGS   = \
 -std=c2x -Wall -Wno-constant-logical-operand \

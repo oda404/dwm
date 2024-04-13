@@ -1,27 +1,31 @@
 
 #include <dwm/log.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <pwd.h>
-#include <limits.h>
-#include <stdarg.h>
-#include <sys/time.h>
 #include <dwm/util.h>
+#include <limits.h>
+#include <pwd.h>
+#include <stdarg.h>
 #include <stdatomic.h>
+#include <stdio.h>
+#include <sys/time.h>
+#include <unistd.h>
+
+#ifdef __linux__
+#include <linux/limits.h>
+#endif // __linux__
 
 #ifndef VERSION
 #define VERSION "unknown"
 #endif
 
-#define LOG_FAIL                          \
-    {                                     \
-        fclose(g_logfile);                \
-        g_logfile = NULL;                 \
-        atomic_flag_clear(&g_print_lock); \
-        return -1;                        \
+#define LOG_FAIL                                                               \
+    {                                                                          \
+        fclose(g_logfile);                                                     \
+        g_logfile = NULL;                                                      \
+        atomic_flag_clear(&g_print_lock);                                      \
+        return -1;                                                             \
     }
 
-static FILE *g_logfile;
+static FILE* g_logfile;
 static double g_start_ms;
 static atomic_flag g_print_lock = ATOMIC_FLAG_INIT;
 
@@ -31,7 +35,7 @@ int log_init()
     gettimeofday(&tv, NULL);
     g_start_ms = timeval_to_ms(&tv);
 
-    struct passwd *pw = getpwuid(getuid());
+    struct passwd* pw = getpwuid(getuid());
 
     char logfile_path[PATH_MAX];
     snprintf(logfile_path, PATH_MAX, "%s/.dwm.log", pw->pw_dir);
@@ -46,7 +50,7 @@ int log_init()
     return 0;
 }
 
-int log_print(u8 lvl, const char *fmt, ...)
+int log_print(u8 lvl, const char* fmt, ...)
 {
     if (!g_logfile)
         return -1;
