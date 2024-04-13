@@ -100,6 +100,7 @@ enum
     NetWMState,
     NetWMCheck,
     NetWMFullscreen,
+    NetWMAbove,
     NetActiveWindow,
     NetWMWindowType,
     NetWMWindowTypeDialog,
@@ -227,6 +228,7 @@ static void toggletag(const Arg* arg);
 static void toggleview(const Arg* arg);
 static void unfocus(Client* c, int setfocus);
 static void unmanage(Client* c, int destroyed);
+static void unmanage_unmanaged(ClientUnmanaged* c);
 static void unmapnotify(XEvent* e);
 static void updatebarpos(Monitor* m);
 static void updatebars(void);
@@ -277,6 +279,7 @@ static Clr** scheme;
 static Display* dpy;
 static Drw* drw;
 static Monitor *mons, *selmon;
+static ClientUnmanaged* clients_unmanaged;
 static Window root, wmcheckwin;
 static size_t g_tags_width;
 
@@ -510,6 +513,10 @@ void cleanup(void)
     for (m = mons; m; m = m->next)
         while (m->stack)
             unmanage(m->stack, 0);
+
+    while (clients_unmanaged)
+        unmanage_unmanaged(clients_unmanaged);
+
     XUngrabKey(dpy, AnyKey, AnyModifier, root);
     while (mons)
         cleanupmon(mons);
@@ -564,6 +571,7 @@ void clientmessage(XEvent* e)
 
     if (!c)
         return;
+
     if (cme->message_type == netatom[NetWMState])
     {
         if (cme->data.l[1] == netatom[NetWMFullscreen] ||
@@ -1277,6 +1285,45 @@ void killclient(const Arg* arg)
     }
 }
 
+void manage_unmanaged(Window w, XWindowAttributes* wa)
+{
+    ClientUnmanaged* c = ecalloc(1, sizeof(ClientUnmanaged));
+    c->win = w;
+    c->next = clients_unmanaged;
+    clients_unmanaged = c;
+
+    XRaiseWindow(dpy, w);
+}
+
+void unmanage_unmanaged(ClientUnmanaged* c)
+{
+    ClientUnmanaged** tmpc;
+    for (tmpc = &clients_unmanaged; *tmpc != c && *tmpc; tmpc = &(*tmpc)->next)
+        ;
+
+    if (!(*tmpc))
+    {
+        log_print(
+            LOG_ERR,
+            "Tried to unmanage an unmanaged client but couldn't find it in the client tree!");
+        return;
+    }
+
+    *tmpc = c->next;
+    free(c);
+}
+
+ClientUnmanaged* win_to_unmanaged_client(Window w)
+{
+    for (ClientUnmanaged* c = clients_unmanaged; c; c = c->next)
+    {
+        if (c->win == w)
+            return c;
+    }
+
+    return NULL;
+}
+
 void manage(Window w, XWindowAttributes* wa)
 {
     Client *c, *t = NULL;
@@ -1381,8 +1428,13 @@ void maprequest(XEvent* e)
 
     if (!XGetWindowAttributes(dpy, ev->window, &wa))
         return;
-    if (wa.override_redirect)
+
+    if (wa.override_redirect && !win_to_unmanaged_client(ev->window))
+    {
+        manage_unmanaged(ev->window, &wa);
         return;
+    }
+
     if (!wintoclient(ev->window))
         manage(ev->window, &wa);
 }
@@ -1679,6 +1731,10 @@ void restack(Monitor* m)
                 wc.sibling = c->win;
             }
     }
+
+    for (ClientUnmanaged* cun = clients_unmanaged; cun; cun = cun->next)
+        XRaiseWindow(dpy, cun->win);
+
     XSync(dpy, False);
     while (XCheckMaskEvent(dpy, EnterWindowMask, &ev))
         ;
@@ -1942,6 +1998,7 @@ void setup(void)
     netatom[NetWMCheck] = XInternAtom(dpy, "_NET_SUPPORTING_WM_CHECK", False);
     netatom[NetWMFullscreen] =
         XInternAtom(dpy, "_NET_WM_STATE_FULLSCREEN", False);
+    netatom[NetWMAbove] = XInternAtom(dpy, "_NET_WM_STATE_ABOVE", False);
     netatom[NetWMWindowType] = XInternAtom(dpy, "_NET_WM_WINDOW_TYPE", False);
     netatom[NetWMWindowTypeDialog] =
         XInternAtom(dpy, "_NET_WM_WINDOW_TYPE_DIALOG", False);
@@ -2257,6 +2314,12 @@ void unmapnotify(XEvent* e)
         else
             unmanage(c, 0);
     }
+
+    ClientUnmanaged* unc;
+    if ((unc = win_to_unmanaged_client(ev->window)))
+    {
+        unmanage_unmanaged(unc);
+    }
 }
 
 void updatebars(void)
@@ -2520,6 +2583,7 @@ void updatewindowtype(Client* c)
 
     if (state == netatom[NetWMFullscreen])
         setfullscreen(c, 1);
+
     if (wtype == netatom[NetWMWindowTypeDialog])
         c->isfloating = 1;
 }

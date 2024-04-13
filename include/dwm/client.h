@@ -24,4 +24,11 @@ struct Client
     Window win;
 };
 
+typedef struct ClientUnmanaged
+{
+    Window win;
+    bool isabove;
+    struct ClientUnmanaged* next;
+} ClientUnmanaged;
+
 #endif // !DWM_CLIENT_H
