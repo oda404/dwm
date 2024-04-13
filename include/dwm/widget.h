@@ -11,17 +11,19 @@
 #include <sys/time.h>
 #include <threads.h>
 
+/* Including the null terminator */
 #define WIDGET_TEXT_MAXLEN 128
 
 typedef enum
 {
+    /* Widget is clean doesn't need rerendering */
     WIDGET_DIRTY_CLEAN,
+    /* Widget's contents have changed */
     WIDGET_DIRTY_TEXT_CHANGED,
+    /* Widget's contents have changed + their lengths */
     WIDGET_DIRTY_LEN_CHANGED,
 } WidgetDirtyType;
 
-/* Any members starting with an underscore are for internal use and should not
- * be fucked with by config.h */
 typedef struct S_Widget
 {
     /* The widget icon, generally an UTF-8 symbol. */
@@ -30,13 +32,14 @@ typedef struct S_Widget
     const char* fgcolor;
     const char* bgcolor;
 
+    /* State of the text backbuffer */
+    WidgetDirtyType _dirty;
+
     /* The body of the widget, displayed to the left of the icon, if any. */
     char _text_backbuffer[WIDGET_TEXT_MAXLEN];
 
     /* True if the widget should be updated and drawn. */
     bool _active;
-
-    WidgetDirtyType _dirty;
 
     int (*init)(struct S_Widget*);
     int (*update)(struct S_Widget*);

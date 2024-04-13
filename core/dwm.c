@@ -909,16 +909,22 @@ static int drawbar_tags(float dt, Monitor* m)
     return x;
 }
 
-static void drawbar_title(Monitor* m, ssize_t x, size_t max_width)
+static void drawbar_title(Monitor* m, ssize_t x, size_t w)
 {
-    if (!g_scroll_title && m->sel->name_dirty)
+    if (!g_scroll_title)
     {
         drw_setscheme(drw, scheme[SchemeNorm]);
-        drw_rect(drw, x, 0, max_width, m->bar_height, 1, 1);
-        drw_text_no_bg(
-            drw, x, 0, max_width, m->bar_height, lrpad / 2, m->sel->name, 0);
-
-        m->sel->name_dirty = false;
+        if (!m->sel)
+        {
+            drw_rect(drw, x, 0, w, m->bar_height, 1, 1);
+        }
+        else if (m->sel->name_dirty)
+        {
+            drw_rect(drw, x, 0, w, m->bar_height, 1, 1);
+            drw_text_no_bg(
+                drw, x, 0, w, m->bar_height, lrpad / 2, m->sel->name, 0);
+            m->sel->name_dirty = false;
+        }
         return;
     }
 
@@ -965,12 +971,9 @@ void drawbar(Monitor* m, float dt)
     if (widgets_any_dirty(widgets, LENGTH(widgets)))
         widgets_draw(m);
 
-    if (m->sel)
-    {
-        const size_t title_x = g_tags_width + g_tags_ltsymbol_width;
-        const size_t title_max_width = m->widgets_width - title_x;
-        drawbar_title(m, title_x, title_max_width);
-    }
+    const size_t title_x = g_tags_width + g_tags_ltsymbol_width;
+    const size_t title_max_width = m->widgets_width - title_x;
+    drawbar_title(m, title_x, title_max_width);
 
     // FIXME: map more smartly
     drw_map(drw, m->barwin, 0, 0, m->ww, bh);
