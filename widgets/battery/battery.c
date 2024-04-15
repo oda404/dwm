@@ -1,6 +1,6 @@
 
 #include "battery.h"
-#include <dwm/colors.h>
+#include <dwm/config/colors.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -123,32 +123,32 @@ int widget_battery_update(struct S_Widget* w)
     if (battery_perc <= 10)
     {
         w->icon = " ";
-        w->bgcolor = col_danger;
-        w->fgcolor = col_normal_text;
+        w->bgcolor = COL_DANGER;
+        w->fgcolor = COL_NORMAL_TEXT;
     }
     else if (battery_perc <= 25)
     {
         w->icon = " ";
-        w->bgcolor = col_danger;
-        w->fgcolor = col_normal_text;
+        w->bgcolor = COL_DANGER;
+        w->fgcolor = COL_NORMAL_TEXT;
     }
     else if (battery_perc <= 50)
     {
         w->icon = " ";
-        w->bgcolor = col_warn;
-        w->fgcolor = col_normal_text;
+        w->bgcolor = COL_WARN;
+        w->fgcolor = COL_NORMAL_TEXT;
     }
     else if (battery_perc <= 75)
     {
         w->icon = " ";
-        w->bgcolor = col_ok;
-        w->fgcolor = col_normal_text;
+        w->bgcolor = COL_OK;
+        w->fgcolor = COL_NORMAL_TEXT;
     }
     else
     {
         w->icon = " ";
-        w->bgcolor = col_ok;
-        w->fgcolor = col_normal_text;
+        w->bgcolor = COL_OK;
+        w->fgcolor = COL_NORMAL_TEXT;
     }
 
     return 0;

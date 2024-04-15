@@ -5,7 +5,7 @@ include config.mk
 
 SRC = \
 core/drw.c core/dwm.c core/util.c core/log.c core/widget.c core/colors.c \
-core/screenshot.c core/multimon.c core/wallpaper.c ${WIDGETS_SRC} ${EXTENSIONS_SRC} ${EXTRA_SRC} ${LTILS_SRC}
+core/multimon.c core/wallpaper.c ${WIDGETS_SRC} ${EXTENSIONS_SRC} ${EXTRA_SRC} ${LTILS_SRC}
 
 COBJS = ${SRC:%.c=$(BUILDDIR)/%.c.o}
 CDEPS = ${SRC:%.c=$(BUILDDIR)/%.c.d}
@@ -13,7 +13,7 @@ CORE_DEPS = config.h config.mk
 
 DWM = $(BUILDDIR)/dwm
 
-all: options ${DWM}
+all: ${DWM}
 
 options:
 	@echo dwm build options:
@@ -25,12 +25,29 @@ config.h:
 	cp config.def.h $@
 
 ${DWM}: ${COBJS}
-	${CC} -o $@ ${COBJS} ${LDFLAGS}
+	@echo "  LD     $@"
+	@${CC} -o $@ ${COBJS} ${LDFLAGS}
 
 -include ${CDEPS}
 $(BUILDDIR)/%.c.o: %.c ${CORE_DEPS}
 	@mkdir -p $(dir $@)
-	${CC} -c ${CFLAGS} $< -o $@
+	@echo "  CC     $@"
+	@${CC} -c ${CFLAGS} $< -o $@
+
+$(BUILDDIR)/extensions/%.c.o: extensions/%.c ${CORE_DEPS}
+	@mkdir -p $(dir $@)
+	@echo "  CC EXT $@"
+	@${CC} -c ${CFLAGS} $< -o $@
+
+$(BUILDDIR)/widgets/%.c.o: widgets/%.c ${CORE_DEPS}
+	@mkdir -p $(dir $@)
+	@echo "  CC WID $@"
+	@${CC} -c ${CFLAGS} $< -o $@
+
+$(BUILDDIR)/ltils/%.c.o: ltils/%.c ${CORE_DEPS}
+	@mkdir -p $(dir $@)
+	@echo "  CC LTL $@"
+	@${CC} -c ${CFLAGS} $< -o $@
 
 clean:
 	rm -f ${DWM} ${COBJS} ${CDEPS} dwm-${VERSION}.tar.gz

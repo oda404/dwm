@@ -22,43 +22,34 @@ FREETYPEINC = /usr/include/freetype2
 #FREETYPEINC = ${X11INC}/freetype2
 #MANPREFIX = ${PREFIX}/man
 
-# Audio control/display API
-AUDIOCON_SRC = core/audiocon.c
-AUDIOCON_FLAGS = -DUSE_AUDIOCON
-
-# PulseAudio support for audiocon
-HAVE_PULSE = 1
-PULSE_SRC = audiocon_backends/pulse.c
-PULSE_LIBS = -lpulse
-PULSE_FLAGS = -DUSE_PULSE
-
 # includes and libs
-INCS = -I${X11INC} -I${FREETYPEINC} -Iltils/include
+INCS = -I${X11INC} -I${FREETYPEINC} -Iltils/include -Iinclude
 LIBS = -L${X11LIB} -lX11 ${XINERAMALIBS} ${FREETYPELIBS} -lXrender -lm
 
 # flags
 CPPFLAGS = -D_DEFAULT_SOURCE -D_BSD_SOURCE -D_POSIX_C_SOURCE=200809L -DVERSION=\"${VERSION}\" \
-${XINERAMAFLAGS} -Iinclude
+${XINERAMAFLAGS}
 
-# Config options
-ifeq ($(HAVE_PULSE), 1)
-    HAVE_AUDIOCON = 1
-	EXTRA_SRC += $(PULSE_SRC)
-	LIBS += $(PULSE_LIBS)
-	CPPFLAGS += $(PULSE_FLAGS)
-endif
-
-ifeq ($(HAVE_AUDIOCON), 1)
-    EXTRA_SRC += $(AUDIOCON_SRC)
-	CPPFLAGS += $(AUDIOCON_FLAGS)
-endif
-
-WIDGETS_SRC = widgets/backlight.c widgets/battery.c widgets/microphone.c widgets/network.c \
-widgets/speakers.c widgets/time.c widgets/cpuinfo/cpuload.c widgets/mem.c 
+EXTENSIONS_DIR = extensions/
+WIDGETS_DIR = widgets/
 
 EXTENSIONS_SRC = 
+WIDGETS_SRC = 
 
 include extensions/xnightlight/sub.mk
+include extensions/slock/sub.mk
+include extensions/alacritty/sub.mk
+include extensions/dmenu/sub.mk
+include extensions/x2screenshot/sub.mk
+
+include widgets/time/sub.mk
+include widgets/cpuinfo/sub.mk
+include widgets/backlight/sub.mk
+include widgets/battery/sub.mk
+include widgets/mem/sub.mk
+include widgets/microphone/sub.mk
+include widgets/speakers/sub.mk
+include widgets/network/sub.mk
 
 LTILS_SRC = ltils/src/proc/proc.c ltils/src/string/numeric.c ltils/src/cleanup.c
 

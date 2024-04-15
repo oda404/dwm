@@ -42,11 +42,14 @@
 #endif /* XINERAMA */
 #include <X11/Xft/Xft.h>
 
+#include <X11/extensions/dpms.h>
+
 #ifndef VERSION
 #define VERSION "unknown"
 #endif
 
 #include <dwm/arg.h>
+#include <dwm/colors.h>
 #include <dwm/drw.h>
 #include <dwm/layout.h>
 #include <dwm/log.h>
@@ -55,7 +58,8 @@
 #include <dwm/util.h>
 #include <dwm/wallpaper.h>
 #include <dwm/widget.h>
-#ifdef USE_AUDIOCON
+
+#ifdef HAVE_AUDIOCON
 #include <dwm/audiocon.h>
 #endif
 
@@ -540,7 +544,7 @@ void cleanup(void)
 
     clrs_free_all();
 
-#ifdef USE_AUDIOCON
+#ifdef HAVE_AUDIOCON
     audiocon_destroy();
 #endif
 
@@ -884,7 +888,7 @@ static int drawbar_tags(float dt, Monitor* m)
 
         if (urg & 1 << i) /* Is urgent */
         {
-            Clr* sch = clrs_get_scheme(drw, col_normal_text, col_warn);
+            Clr* sch = clrs_get_scheme(drw, COL_NORMAL_TEXT, COL_WARN);
             drw_setscheme(drw, sch);
             drw_rect(drw, x, 0, w, BAR_Y_PADDING / 2, 1, 1);
         }
@@ -972,7 +976,7 @@ void drawbar(Monitor* m, float dt)
         widgets_draw(m);
 
     const size_t title_x = g_tags_width + g_tags_ltsymbol_width;
-    const size_t title_max_width = m->widgets_width - title_x;
+    const size_t title_max_width = (m->bar_width - m->widgets_width) - title_x;
     drawbar_title(m, title_x, title_max_width);
 
     // FIXME: map more smartly
@@ -2025,7 +2029,7 @@ void setup(void)
     for (size_t i = 0; i < LENGTH(tags); i++)
         g_tags_width += TEXTW(tags[i]);
 
-#ifdef USE_AUDIOCON
+#ifdef HAVE_AUDIOCON
     audiocon_init();
 #endif
 
@@ -2138,8 +2142,6 @@ void sigchld(int unused)
 
 void spawn(const Arg* arg)
 {
-    if (arg->v == dmenucmd)
-        dmenumon[0] = '0' + selmon->num;
     if (fork() == 0)
     {
         if (dpy)

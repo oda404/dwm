@@ -1,9 +1,9 @@
 
-#ifndef DWM_XNIGHTLIGHT_WIDGET_H
-#define DWM_XNIGHTLIGHT_WIDGET_H
+#ifndef DWM_EXTENSIONS_XNIGHTLIGHT_XNIGHTLIGHT_H
+#define DWM_EXTENSIONS_XNIGHTLIGHT_XNIGHTLIGHT_H
 
 #include <dwm/arg.h>
 
-void dwm_xnightlight_toggle(const Arg* arg);
+void dwm_extension_xnightlight_toggle(const Arg* arg);
 
-#endif // !DWM_XNIGHTLIGHT_WIDGET_H
+#endif // !DWM_EXTENSIONS_XNIGHTLIGHT_XNIGHTLIGHT_H

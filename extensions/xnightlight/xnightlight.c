@@ -6,7 +6,7 @@
 
 extern void spawn(const Arg* arg);
 
-void dwm_xnightlight_toggle(const Arg*)
+void dwm_extension_xnightlight_toggle(const Arg*)
 {
     pid_t pid = ltils_proc_find_by_bin_name("xnightlight");
     if (pid > 0)

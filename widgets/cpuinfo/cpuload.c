@@ -1,7 +1,7 @@
 
 #include "cpuload.h"
 
-#include <dwm/colors.h>
+#include <dwm/config/colors.h>
 #include <dwm/types.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -94,7 +94,7 @@ int widget_cpuload_init(struct S_Widget* w)
         return 1;
     }
 
-    w->bgcolor = col_dark_highlight_primary;
+    w->bgcolor = COL_DARK_HIGHLIGHT_PRIMARY;
     widget_cpuload_update(w);
     return 0;
 }

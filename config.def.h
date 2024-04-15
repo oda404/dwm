@@ -1,7 +1,8 @@
 /* See LICENSE file for copyright and license details. */
 
-#include <dwm/colors.h>
-#include <dwm/screenshot.h>
+#include <dwm/config/colors.h>
+#include <dwm/config/extensions.h>
+#include <dwm/config/widgets.h>
 #include <dwm/widget.h>
 
 /* appearance */
@@ -11,14 +12,13 @@ static const int showbar = 1;           /* 0 means no bar */
 static const int topbar = 1;            /* 0 means bottom bar */
 static const bool g_scroll_title = false;
 static const char* fonts[] = {"Ubuntu Mono Nerd Font:size=10:style=Bold"};
-static const char dmenufont[] = "Ubuntu Mono Nerd Font:size=13";
 
 static const char* colors[][2] = {
     /*               fg         bg   */
-    [SchemeNorm] = {col_normal_text, col_tranparent},
-    [SchemeSel] = {col_normal_text, col_dark_bg},
+    [SchemeNorm] = {COL_NORMAL_TEXT, COL_TRANSPARENT},
+    [SchemeSel] = {COL_NORMAL_TEXT, COL_DARK_BG},
     [SchemeTagNormal] =
-        {col_dark_highlight_secondary, col_dark_highlight_primary},
+        {COL_DARK_HIGHLIGHT_SECONDARY, COL_DARK_HIGHLIGHT_PRIMARY},
 };
 
 /* tagging */
@@ -29,94 +29,6 @@ static const Rule rules[] = {
     // {"Gimp", NULL, NULL, 0, 1, -1},
     // {"Firefox", NULL, NULL, 1 << 8, 0, -1},
 };
-
-static const char* multimon_setup_path = NULL;
-
-static const char* wallpaper_path = NULL;
-
-/* Commands executed when dwm starts */
-static const char* runners[] = {};
-
-/* Bar widgets */
-#include "widgets/backlight.h"
-#include "widgets/battery.h"
-#include "widgets/cpuinfo/cpuload.h"
-#include "widgets/mem.h"
-#include "widgets/microphone.h"
-#include "widgets/network.h"
-#include "widgets/speakers.h"
-#include "widgets/time.h"
-
-#define WIDGET_TIME 0
-#define WIDGET_BATTERY 1
-#define WIDGET_CPULOAD 2
-#define WIDGET_MEM 3
-#define WIDGET_NETWORK 4
-#define WIDGET_SPEAKERS 5
-#define WIDGET_MICROPHONE 6
-#define WIDGET_BACKLIGHT 7
-#define WIDGET_LAST 8
-
-Widget widgets[] = {
-    [WIDGET_BATTERY] =
-        {
-            .show_on_monitors = "0",
-            .init = widget_battery_init,       //
-            .update = widget_battery_update,   //
-            .destroy = widget_battery_destroy, //
-            .update_interval = {.tv_sec = 2}   //
-        },
-    [WIDGET_BACKLIGHT] =
-        {
-            .icon = "",
-            .show_on_monitors = "0",            //
-            .init = widget_backlight_init,      //
-            .destroy = widget_backlight_destroy //
-        },
-    [WIDGET_NETWORK] =
-        {
-            .init = widget_network_init,
-            .show_on_monitors = "0",           //
-            .update = widget_network_update,   //
-            .destroy = widget_network_destroy, //
-            .update_interval = {.tv_sec = 1}   //
-        },
-    [WIDGET_TIME] =
-        {
-            .init = widget_time_init,
-            .update = widget_time_update,    //
-            .destroy = widget_time_destroy,  //
-            .update_interval = {.tv_sec = 1} //
-        },
-    [WIDGET_MICROPHONE] =
-        {
-            .icon = "",
-            .init = widget_microphone_init,      //
-            .update = NULL,                      //
-            .destroy = widget_microphone_destroy //
-        },
-    [WIDGET_SPEAKERS] =
-        {
-            .icon = " ",
-            .init = widget_speakers_init,      //
-            .update = NULL,                    //
-            .destroy = widget_speakers_destroy //
-        },
-    [WIDGET_CPULOAD] =
-        {
-            .init = widget_cpuload_init,
-            .update = widget_cpuload_update,                    //
-            .destroy = widget_cpuload_destroy,                  //
-            .update_interval = {.tv_sec = 0, .tv_usec = 100000} //
-        },                                                      //
-    [WIDGET_MEM] =
-        {
-            .init = widget_mem_init,         //
-            .update = widget_mem_update,     //
-            .destroy = widget_mem_destroy,   //
-            .update_interval = {.tv_sec = 1} //
-        },
-    [WIDGET_LAST] = {}};
 
 /* layout(s) */
 static const float mfact = 0.55; /* factor of master area size [0.05..0.95] */
@@ -133,6 +45,71 @@ static const Layout layouts[] = {
     {"M", monocle},
 };
 
+static const char* multimon_setup_path = "~/.dwm.mmsetup";
+
+static const char* wallpaper_path = "~/.local/share/wallpapers/viata.png";
+
+/* Commands executed when dwm starts */
+static const char* runners[] = {
+    "systemctl --user start mac",
+    /* Tap to click */
+    "xinput set-prop \"ELAN469D:00 04F3:304B Touchpad\" $(xinput list-props \"ELAN469D:00 04F3:304B Touchpad\" | grep \"libinput Tapping Enabled (\" | cut -d ')' -f 1 - | cut -d '(' -f 2 -) 1",
+    /* Window compositor */
+    "picom -b"};
+
+enum
+{
+    WIDGET_TIME = 0,
+    WIDGET_BATTERY = 1,
+    WIDGET_CPULOAD = 2,
+    WIDGET_MEM = 3,
+    WIDGET_NETWORK = 4,
+    WIDGET_SPEAKERS = 5,
+    WIDGET_MICROPHONE = 6,
+    WIDGET_BACKLIGHT = 7,
+    WIDGET_LAST,
+};
+
+Widget widgets[] = {
+
+#ifdef HAVE_WIDGET_BATTERY
+    [WIDGET_BATTERY] =
+        WIDGET_INSTANCE_PERIODIC(battery, NULL, "0", {.tv_sec = 2}),
+#endif
+
+#ifdef HAVE_WIDGET_BACKLIGHT
+    [WIDGET_BACKLIGHT] = WIDGET_INSTANCE_VOLATILE(backlight, "", "0"),
+#endif
+
+#ifdef HAVE_WIDGET_NETWORK
+    [WIDGET_NETWORK] =
+        WIDGET_INSTANCE_PERIODIC(network, NULL, "0", {.tv_sec = 1}),
+#endif
+
+#ifdef HAVE_WIDGET_TIME
+    [WIDGET_TIME] = WIDGET_INSTANCE_PERIODIC(time, NULL, NULL, {.tv_sec = 1}),
+#endif
+
+#ifdef HAVE_WIDGET_MICROPHONE
+    [WIDGET_MICROPHONE] = WIDGET_INSTANCE_VOLATILE(microphone, "", NULL),
+#endif
+
+#ifdef HAVE_WIDGET_SPEAKERS
+    [WIDGET_SPEAKERS] = WIDGET_INSTANCE_VOLATILE(speakers, " ", NULL),
+#endif
+
+#ifdef HAVE_WIDGET_CPUINFO
+    [WIDGET_CPULOAD] =
+        WIDGET_INSTANCE_PERIODIC(cpuload, NULL, NULL, {.tv_usec = 100000}),
+#endif
+
+#ifdef HAVE_WIDGET_MEM
+    [WIDGET_MEM] = WIDGET_INSTANCE_PERIODIC(mem, NULL, NULL, {.tv_sec = 1}),
+#endif
+
+    [WIDGET_LAST] = {} //
+};
+
 /* key definitions */
 #define MODKEY Mod1Mask
 #define TAGKEYS(KEY, TAG)                                                      \
@@ -147,53 +124,88 @@ static const Layout layouts[] = {
     }
 
 /* commands */
-static char dmenumon[2] =
-    "0"; /* component of dmenucmd, manipulated in spawn() */
-static const char* dmenucmd[] = {
-    "dmenu_run",
-    "-m",
-    dmenumon,
-    "-fn",
-    dmenufont,
-    "-nb",
-    col_dark_bg,
-    "-nf",
-    col_normal_text,
-    "-sb",
-    col_dark_highlight_primary,
-    "-sf",
-    "#FFEEEEEE",
-    NULL};
-static const char* termcmd[] = {"alacritty", NULL};
-static const char* suspendcmd[] = {"slock", "systemctl", "suspend", "-i", NULL};
-static const char* lockcmd[] = {"slock", NULL};
-
-static const void* speakers_plus[] = {"+", &widgets[WIDGET_SPEAKERS], NULL};
-static const void* speakers_minus[] = {"-", &widgets[WIDGET_SPEAKERS], NULL};
-static const void* speakers_mute[] = {"m", &widgets[WIDGET_SPEAKERS], NULL};
-
-static const void* microphone_plus[] = {"+", &widgets[WIDGET_MICROPHONE], NULL};
-static const void* microphone_minus[] = {
-    "-", &widgets[WIDGET_MICROPHONE], NULL};
-static const void* microphone_mute[] = {"m", &widgets[WIDGET_MICROPHONE], NULL};
-
-static const void* backlight_raise[] = {"+", &widgets[WIDGET_BACKLIGHT], NULL};
-static const void* backlight_lower[] = {"-", &widgets[WIDGET_BACKLIGHT], NULL};
-
 static Key keys[] = {
-    /* modifier              key           function                 argument */
-    {MODKEY, XK_p, spawn, {.v = dmenucmd}},
-    {MODKEY | ShiftMask, XK_z, spawn, {.v = suspendcmd}},
-    {MODKEY, XK_z, spawn, {.v = lockcmd}},
-    {ControlMask, XK_grave, spawn, {.v = termcmd}},
-    {MODKEY, XK_F1, widget_speakers_event, {.v = speakers_mute}},
-    {MODKEY, XK_F2, widget_speakers_event, {.v = speakers_minus}},
-    {MODKEY, XK_F3, widget_speakers_event, {.v = speakers_plus}},
-    {MODKEY, XK_End, widget_microphone_event, {.v = microphone_mute}},
-    {MODKEY, XK_minus, widget_microphone_event, {.v = microphone_minus}},
-    {MODKEY, XK_equal, widget_microphone_event, {.v = microphone_plus}},
-    {MODKEY, XK_Page_Up, widget_backlight_event, {.v = backlight_raise}},
-    {MODKEY, XK_Page_Down, widget_backlight_event, {.v = backlight_lower}},
+/* modifier              key           function                 argument */
+#ifdef HAVE_EXTENSION_APPMENU
+    {MODKEY, XK_p, dwm_extension_appmenu_spawn, {0}},
+#endif
+
+#ifdef HAVE_EXTENSION_LOCK
+    {MODKEY | ShiftMask, XK_z, spawn, {.v = DWM_EXTENSIONS_SUSPEND_LOCK_CMD}},
+
+    {MODKEY, XK_z, spawn, {.v = DWM_EXTENSIONS_LOCK_CMD}},
+#endif
+
+#ifdef HAVE_EXTENSION_TERM
+    {ControlMask, XK_grave, spawn, {.v = DWM_EXTENSIONS_TERM_CMD}},
+#endif
+
+#ifdef HAVE_WIDGET_SPEAKERS
+    {
+        MODKEY,
+        XK_F1,
+        widget_speakers_event,
+        {.v = (const void*[]){"m", &widgets[WIDGET_SPEAKERS], NULL}} //
+    },
+    {
+        MODKEY,
+        XK_F2,
+        widget_speakers_event,
+        {.v = (const void*[]){"-", &widgets[WIDGET_SPEAKERS], NULL}} //
+    },
+    {
+        MODKEY,
+        XK_F3,
+        widget_speakers_event,
+        {.v = (const void*[]){"+", &widgets[WIDGET_SPEAKERS], NULL}} //
+    },
+#endif
+
+#ifdef HAVE_WIDGET_MICROPHONE
+    {
+        MODKEY,
+        XK_End,
+        widget_microphone_event,
+        {.v = (const void*[]){"m", &widgets[WIDGET_MICROPHONE], NULL}} //
+    },
+    {
+        MODKEY,
+        XK_minus,
+        widget_microphone_event,
+        {.v = (const void*[]){"-", &widgets[WIDGET_MICROPHONE], NULL}} //
+    },
+    {
+        MODKEY,
+        XK_equal,
+        widget_microphone_event,
+        {.v = (const void*[]){"+", &widgets[WIDGET_MICROPHONE], NULL}} //
+    },
+#endif
+
+#ifdef HAVE_WIDGET_BACKLIGHT
+    {
+        MODKEY,
+        XK_Page_Up,
+        widget_backlight_event,
+        {.v = (const void*[]){"+", &widgets[WIDGET_BACKLIGHT], NULL}} //
+    },
+    {
+        MODKEY,
+        XK_Page_Down,
+        widget_backlight_event,
+        {.v = (const void*[]){"-", &widgets[WIDGET_BACKLIGHT], NULL}} //
+    },
+#endif
+
+#ifdef HAVE_XNIGHTLIGHT
+    {MODKEY, XK_n, dwm_extension_xnightlight_toggle, {0}},
+#endif
+
+#ifdef DWM_EXTENSIONS_USE_SCREENSHOT
+    {MODKEY, XK_s, spawn, {.v = DWM_EXTENSIONS_SCREENSHOT_CMD}},
+#endif
+
+    /* vanilla dwm keys */
     {MODKEY, XK_b, togglebar, {0}},
     {MODKEY, XK_j, focusstack, {.i = +1}},
     {MODKEY, XK_k, focusstack, {.i = -1}},
@@ -215,7 +227,6 @@ static Key keys[] = {
     {MODKEY, XK_period, focusmon, {.i = +1}},
     {MODKEY | ShiftMask, XK_comma, tagmon, {.i = -1}},
     {MODKEY | ShiftMask, XK_period, tagmon, {.i = +1}},
-    {MODKEY, XK_s, screenshot_start, {0}},
     TAGKEYS(XK_1, 0),
     TAGKEYS(XK_2, 1),
     TAGKEYS(XK_3, 2),
@@ -236,7 +247,7 @@ static Button buttons[] = {
     {ClkLtSymbol, 0, Button1, setlayout, {0}},
     {ClkLtSymbol, 0, Button3, setlayout, {.v = &layouts[2]}},
     {ClkWinTitle, 0, Button2, zoom, {0}},
-    {ClkStatusText, 0, Button2, spawn, {.v = termcmd}},
+    // {ClkStatusText, 0, Button2, spawn, {.v = termcmd}},
     {ClkClientWin, MODKEY, Button1, movemouse, {0}},
     {ClkClientWin, MODKEY, Button2, togglefloating, {0}},
     {ClkClientWin, MODKEY, Button3, resizemouse, {0}},

@@ -14,6 +14,23 @@
 /* Including the null terminator */
 #define WIDGET_TEXT_MAXLEN 128
 
+#define WIDGET_INSTANCE_PERIODIC(_name, _icon, _show_on_monitors, _interval)   \
+    ((Widget){                                                                 \
+        .icon = _icon,                                                         \
+        .show_on_monitors = _show_on_monitors,                                 \
+        .init = widget_##_name##_init,                                         \
+        .update = widget_##_name##_update,                                     \
+        .destroy = widget_##_name##_destroy,                                   \
+        .update_interval = _interval})
+
+#define WIDGET_INSTANCE_VOLATILE(_name, _icon, _show_on_monitors)              \
+    ((Widget){                                                                 \
+        .icon = _icon,                                                         \
+        .show_on_monitors = _show_on_monitors,                                 \
+        .init = widget_##_name##_init,                                         \
+        .destroy = widget_##_name##_destroy,                                   \
+    })
+
 typedef enum
 {
     /* Widget is clean doesn't need rerendering */

@@ -1,6 +1,6 @@
 
 #include "mem.h"
-#include <dwm/colors.h>
+#include <dwm/config/colors.h>
 #include <dwm/types.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -93,18 +93,18 @@ int widget_mem_update(struct S_Widget* w)
     const float mem_total_third = mem_total_gb / 3;
     if (mem_used_gb >= mem_total_third * 2)
     {
-        w->bgcolor = col_danger;
-        w->fgcolor = col_normal_text;
+        w->bgcolor = COL_DANGER;
+        w->fgcolor = COL_NORMAL_TEXT;
     }
     else if (mem_used_gb >= mem_total_third * 1 /* duh */)
     {
-        w->bgcolor = col_warn;
-        w->fgcolor = col_normal_text;
+        w->bgcolor = COL_WARN;
+        w->fgcolor = COL_NORMAL_TEXT;
     }
     else
     {
-        w->bgcolor = col_ok;
-        w->fgcolor = col_normal_text;
+        w->bgcolor = COL_OK;
+        w->fgcolor = COL_NORMAL_TEXT;
     }
 
     widget_snprintf_text(w, "%.1f/%.1f GiB", mem_used_gb, mem_total_gb);
