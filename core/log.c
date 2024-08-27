@@ -40,7 +40,7 @@ int log_init()
     char logfile_path[PATH_MAX];
     snprintf(logfile_path, PATH_MAX, "%s/.dwm.log", pw->pw_dir);
 
-    g_logfile = fopen(logfile_path, "a");
+    g_logfile = fopen(logfile_path, "a+e");
     if (!g_logfile)
         return -1;
 

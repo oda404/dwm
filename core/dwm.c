@@ -779,7 +779,7 @@ Monitor* dirtomon(int dir)
 
 int widgets_draw(Monitor* m)
 {
-    size_t tw = m->bar_width;
+    size_t tw = m->mw;
     bool rerender_cascade = false;
     size_t widgets_width = 0;
 
@@ -801,9 +801,9 @@ int widgets_draw(Monitor* m)
         tw -= tmp_tw;
 
         /* Nothing changed, doesn't need to be rerendered */
-        if (st == WIDGET_DIRTY_CLEAN && !rerender_cascade)
-            continue;
-        else if (st == WIDGET_DIRTY_LEN_CHANGED)
+        // if (st == WIDGET_DIRTY_CLEAN && !rerender_cascade)
+        //     continue;
+        if (st == WIDGET_DIRTY_LEN_CHANGED)
             rerender_cascade = true;
 
         Clr* sch = clrs_get_scheme(
@@ -846,7 +846,7 @@ static int drawbar_tags(float dt, Monitor* m)
 
     drw_setscheme(drw, scheme[SchemeNorm]);
     drw_rect(
-        drw, 0, 0, g_tags_width + g_tags_ltsymbol_width, m->bar_height, 1, 1);
+        drw, x, 0, g_tags_width + g_tags_ltsymbol_width, m->bar_height, 1, 1);
 
     const size_t seltag_count = __builtin_popcount(m->tagset[m->seltags]);
 
@@ -922,7 +922,7 @@ static void drawbar_title(Monitor* m, ssize_t x, size_t w)
         {
             drw_rect(drw, x, 0, w, m->bar_height, 1, 1);
         }
-        else if (m->sel->name_dirty)
+        else
         {
             drw_rect(drw, x, 0, w, m->bar_height, 1, 1);
             drw_text_no_bg(
@@ -969,14 +969,17 @@ void drawbar(Monitor* m, float dt)
     if (!m->showbar)
         return;
 
-    if (m->bar_tags_dirty || m->t < 1)
+    drw_setscheme(drw, scheme[SchemeNorm]);
+    drw_rect(drw, 0, 0, m->ww, bh, 1, 0);
+
+    if (true || m->t < 1)
         drawbar_tags(dt, m);
 
-    if (widgets_any_dirty(widgets, LENGTH(widgets)))
+    if (true)
         widgets_draw(m);
 
     const size_t title_x = g_tags_width + g_tags_ltsymbol_width;
-    const size_t title_max_width = (m->bar_width - m->widgets_width) - title_x;
+    const size_t title_max_width = (m->mw - m->widgets_width) - title_x;
     drawbar_title(m, title_x, title_max_width);
 
     // FIXME: map more smartly
@@ -1985,7 +1988,7 @@ void setup(void)
     /* clean up any zombies immediately */
     sigchld(0);
 
-    log_init();
+    //log_init();
 
     /* init screen */
     screen = DefaultScreen(dpy);
